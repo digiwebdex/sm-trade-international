@@ -30,7 +30,7 @@ const HeroSection = () => {
       {/* Background image with parallax */}
       <div
         ref={bgRef}
-        className="absolute inset-0 -top-20 -bottom-20 will-change-transform bg-cover bg-center"
+        className="absolute inset-0 -top-20 -bottom-20 will-change-transform bg-cover bg-right-bottom md:bg-center"
         style={{ backgroundImage: `url(${heroBg})` }}
       />
       {/* Dark overlay for text readability */}
@@ -100,7 +100,7 @@ const HeroSection = () => {
 
       {/* Content */}
       <div className="container mx-auto px-4 py-28 md:py-40 relative z-10">
-        <div className="max-w-3xl mx-auto text-center">
+        <div className="max-w-2xl text-left">
           <div
             className="inline-block bg-white/10 backdrop-blur-sm text-white text-xs font-semibold px-5 py-2 rounded-full mb-8 tracking-widest uppercase border border-white/10"
             style={{ animation: 'heroFadeUp 0.8s ease-out both' }}
@@ -114,13 +114,13 @@ const HeroSection = () => {
             {title}
           </h1>
           <p
-            className="text-lg md:text-xl text-white/60 mb-12 max-w-2xl mx-auto leading-relaxed font-light"
+            className="text-lg md:text-xl text-white/60 mb-12 max-w-xl leading-relaxed font-light"
             style={{ animation: 'heroFadeUp 0.8s 0.3s ease-out both' }}
           >
             {subtitle}
           </p>
             <div
-            className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center"
+            className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-start"
             style={{ animation: 'heroFadeUp 0.8s 0.45s ease-out both' }}
           >
             <Button asChild size="lg" className="w-full sm:w-auto relative overflow-hidden bg-gradient-to-r from-[hsl(var(--sm-red))] via-[hsl(0,80%,55%)] to-[hsl(var(--sm-red-dark))] bg-[length:200%_100%] animate-[heroGradientShift_3s_ease-in-out_infinite] text-white text-lg sm:text-base px-12 py-7 sm:py-6 rounded-xl shadow-[0_8px_32px_hsl(0_72%_51%/0.45)] hover:shadow-[0_16px_48px_hsl(0_72%_51%/0.6)] hover:scale-[1.05] active:scale-[0.98] transition-all duration-300 border border-white/15 group">
