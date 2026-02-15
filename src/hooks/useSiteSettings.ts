@@ -19,8 +19,7 @@ export const useSiteSettings = () => {
       });
       return map;
     },
-    staleTime: 10 * 60 * 1000, // cache 10 min
-    gcTime: 30 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // cache 5 min
   });
 
   const get = (section: string, field: string, fallback = ''): string => {
