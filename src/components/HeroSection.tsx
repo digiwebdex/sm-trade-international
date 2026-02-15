@@ -31,7 +31,7 @@ const HeroSection = () => {
       <div
         ref={bgRef}
         className="absolute inset-0 -top-20 -bottom-20 will-change-transform"
-        style={{ backgroundImage: `url(${heroBg})`, backgroundSize: '90%', backgroundPosition: 'center right', backgroundRepeat: 'no-repeat' }}
+        style={{ backgroundImage: `url(${heroBg})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
       />
       {/* Dark overlay for text readability */}
       <div className="absolute inset-0 bg-[hsl(0,0%,4%)] opacity-60" />
