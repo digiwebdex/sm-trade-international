@@ -126,7 +126,7 @@ const HeroSection = () => {
             <Button asChild size="lg" className="w-full sm:w-auto bg-sm-red hover:bg-[hsl(var(--sm-red-dark))] text-white text-lg sm:text-base px-10 py-7 sm:py-6 rounded-lg shadow-lg shadow-red-900/30">
               <a href="#contact">{ctaPrimary}</a>
             </Button>
-            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto border-white/20 text-white hover:bg-white/10 text-lg sm:text-base px-10 py-7 sm:py-6 rounded-lg backdrop-blur-sm">
+            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto border-white/30 text-white bg-white/10 hover:bg-white/20 text-lg sm:text-base px-10 py-7 sm:py-6 rounded-lg backdrop-blur-sm">
               <a href="#products">{ctaSecondary}</a>
             </Button>
           </div>
