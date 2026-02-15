@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +12,6 @@ const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -22,29 +20,12 @@ const AdminLogin = () => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
     setLoading(true);
-
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password: password.trim(),
-      });
-      setLoading(false);
-      if (error) {
-        toast({ title: 'Sign Up Failed', description: error.message, variant: 'destructive' });
-      } else {
-        toast({ title: 'Account created! Logging in...' });
-        // Auto-login after signup
-        const { error: loginErr } = await signIn(email.trim(), password.trim());
-        if (!loginErr) navigate('/admin');
-      }
+    const { error } = await signIn(email.trim(), password.trim());
+    setLoading(false);
+    if (error) {
+      toast({ title: 'Login Failed', description: error.message, variant: 'destructive' });
     } else {
-      const { error } = await signIn(email.trim(), password.trim());
-      setLoading(false);
-      if (error) {
-        toast({ title: 'Login Failed', description: error.message, variant: 'destructive' });
-      } else {
-        navigate('/admin');
-      }
+      navigate('/admin');
     }
   };
 
@@ -82,19 +63,9 @@ const AdminLogin = () => {
               />
             </div>
             <Button type="submit" className="w-full bg-sm-red hover:bg-[hsl(var(--sm-red-dark))] text-white" disabled={loading}>
-              {loading ? 'Please wait...' : isSignUp ? 'Create Account' : 'Login'}
+              {loading ? 'Logging in...' : 'Login'}
             </Button>
           </form>
-          <p className="text-center text-sm text-muted-foreground mt-4">
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-sm-red hover:underline font-medium"
-            >
-              {isSignUp ? 'Login' : 'Sign Up'}
-            </button>
-          </p>
         </CardContent>
       </Card>
     </div>
