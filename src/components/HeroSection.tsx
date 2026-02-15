@@ -123,10 +123,13 @@ const HeroSection = () => {
             className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center"
             style={{ animation: 'heroFadeUp 0.8s 0.45s ease-out both' }}
           >
-            <Button asChild size="lg" className="w-full sm:w-auto bg-sm-red hover:bg-[hsl(var(--sm-red-dark))] text-white text-lg sm:text-base px-10 py-7 sm:py-6 rounded-lg shadow-lg shadow-red-900/30">
-              <a href="#contact">{ctaPrimary}</a>
+            <Button asChild size="lg" className="w-full sm:w-auto relative overflow-hidden bg-gradient-to-r from-[hsl(var(--sm-red))] to-[hsl(var(--sm-red-dark))] text-white text-lg sm:text-base px-10 py-7 sm:py-6 rounded-xl shadow-[0_8px_30px_hsl(0_72%_51%/0.4)] hover:shadow-[0_12px_40px_hsl(0_72%_51%/0.6)] hover:scale-[1.03] transition-all duration-300 border border-white/10 group">
+              <a href="#contact">
+                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
+                {ctaPrimary}
+              </a>
             </Button>
-            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto border-white/30 text-white bg-white/10 hover:bg-white/20 text-lg sm:text-base px-10 py-7 sm:py-6 rounded-lg backdrop-blur-sm">
+            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto border-white/20 text-white bg-white/5 backdrop-blur-md text-lg sm:text-base px-10 py-7 sm:py-6 rounded-xl hover:bg-white/15 hover:border-white/40 hover:scale-[1.03] transition-all duration-300 shadow-[0_4px_20px_rgba(255,255,255,0.05)]">
               <a href="#products">{ctaSecondary}</a>
             </Button>
           </div>
