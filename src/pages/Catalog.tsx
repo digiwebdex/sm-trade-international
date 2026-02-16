@@ -2,7 +2,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, X, MessageCircle } from 'lucide-react';
+import { Search, X, MessageCircle, ShoppingBag, Check } from 'lucide-react';
+import { useQuoteBasket } from '@/contexts/QuoteBasketContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import TopBar from '@/components/TopBar';
@@ -62,12 +63,27 @@ const categories = [
 const Catalog = () => {
   const { t, lang } = useLanguage();
   const { get } = useSiteSettings();
+  const { addItem, items: basketItems, setIsOpen: openBasket } = useQuoteBasket();
   const whatsappNumber = (get('contact', 'whatsapp_number', '8801867666888') as string).replace(/[^0-9]/g, '') || '8801867666888';
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Product | null>(null);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [justAdded, setJustAdded] = useState<string | null>(null);
+
+  const handleAddToQuote = useCallback((p: Product, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const id = p.titleEn.toLowerCase().replace(/\s+/g, '-');
+    addItem({ id, titleEn: p.titleEn, titleBn: p.titleBn, src: p.src, category: p.category });
+    setJustAdded(id);
+    setTimeout(() => setJustAdded(null), 1500);
+  }, [addItem]);
+
+  const isInBasket = useCallback((p: Product) => {
+    const id = p.titleEn.toLowerCase().replace(/\s+/g, '-');
+    return basketItems.some(i => i.id === id);
+  }, [basketItems]);
 
   const getWhatsAppUrl = useCallback((p: Product) => {
     const productName = lang === 'en' ? p.titleEn : p.titleBn;
@@ -273,10 +289,24 @@ const Catalog = () => {
                             ))}
                           </div>
                         )}
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-semibold text-accent group-hover:underline" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                            {lang === 'en' ? 'View Details →' : 'বিস্তারিত দেখুন →'}
-                          </span>
+                        <div className="flex items-center justify-between gap-2">
+                          <button
+                            onClick={(e) => handleAddToQuote(p, e)}
+                            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
+                              isInBasket(p)
+                                ? 'bg-accent/15 text-accent'
+                                : 'bg-primary/10 text-primary hover:bg-primary/20'
+                            }`}
+                            style={{ fontFamily: 'DM Sans, sans-serif' }}
+                          >
+                            {justAdded === p.titleEn.toLowerCase().replace(/\s+/g, '-') ? (
+                              <><Check className="h-3.5 w-3.5" /> {lang === 'en' ? 'Added!' : 'যোগ হয়েছে!'}</>
+                            ) : isInBasket(p) ? (
+                              <><ShoppingBag className="h-3.5 w-3.5" /> {lang === 'en' ? 'In Basket' : 'বাস্কেটে আছে'}</>
+                            ) : (
+                              <><ShoppingBag className="h-3.5 w-3.5" /> {lang === 'en' ? 'Add to Quote' : 'কোটে যোগ করুন'}</>
+                            )}
+                          </button>
                           <a
                             href={getWhatsAppUrl(p)}
                             target="_blank"
@@ -376,18 +406,23 @@ const Catalog = () => {
               )}
 
               <div className="flex flex-wrap gap-3">
+                <Button
+                  size="lg"
+                  className="bg-accent hover:bg-accent/90 text-white px-8 gap-2"
+                  onClick={() => { handleAddToQuote(selected); }}
+                >
+                  <ShoppingBag className="h-4 w-4" />
+                  <span className="font-semibold" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                    {isInBasket(selected)
+                      ? (lang === 'en' ? 'Added to Basket ✓' : 'বাস্কেটে যোগ হয়েছে ✓')
+                      : (lang === 'en' ? 'Add to Quote Basket' : 'কোটেশন বাস্কেটে যোগ করুন')}
+                  </span>
+                </Button>
                 <Button asChild size="lg" className="bg-[hsl(142,70%,40%)] hover:bg-[hsl(142,70%,35%)] text-white px-8">
                   <a href={getWhatsAppUrl(selected)} target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="h-4 w-4 mr-2" />
                     <span className="font-semibold" style={{ fontFamily: 'DM Sans, sans-serif' }}>
                       {lang === 'en' ? 'Inquire on WhatsApp' : 'WhatsApp এ জিজ্ঞাসা করুন'}
-                    </span>
-                  </a>
-                </Button>
-                <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-white px-8">
-                  <a href="/#contact" onClick={() => setSelected(null)}>
-                    <span className="font-semibold" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                      {lang === 'en' ? 'Request Quote' : 'কোটেশন অনুরোধ'}
                     </span>
                   </a>
                 </Button>

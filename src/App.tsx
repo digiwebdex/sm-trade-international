@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { QuoteBasketProvider } from "@/contexts/QuoteBasketContext";
+import QuoteBasketDrawer from "@/components/QuoteBasketDrawer";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -41,8 +43,10 @@ const App = () => (
       <LanguageProvider>
         <BrowserRouter>
           <AuthProvider>
+            <QuoteBasketProvider>
             <Toaster />
             <Sonner />
+            <QuoteBasketDrawer />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/catalog" element={
@@ -76,6 +80,7 @@ const App = () => (
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </QuoteBasketProvider>
           </AuthProvider>
         </BrowserRouter>
       </LanguageProvider>
