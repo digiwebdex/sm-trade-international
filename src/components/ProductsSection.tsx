@@ -264,7 +264,7 @@ const ProductsSection = () => {
                 {/* Gold corner accents on hover */}
                 <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-[hsl(var(--sm-gold))]/0 group-hover:border-[hsl(var(--sm-gold))]/60 transition-all duration-300 rounded-tl-2xl z-10" />
                 <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-[hsl(var(--sm-gold))]/0 group-hover:border-[hsl(var(--sm-gold))]/60 transition-all duration-300 rounded-br-2xl z-10" />
-                <div className={`aspect-square overflow-hidden bg-muted relative ${!p.isActive ? 'opacity-50' : ''}`}>
+                <div className={`aspect-square overflow-hidden bg-white relative ${!p.isActive ? 'opacity-50' : ''}`}>
                   {p.src ? (
                     <img
                       src={p.src}

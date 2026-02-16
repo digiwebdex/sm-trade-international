@@ -192,7 +192,7 @@ const Catalog = () => {
                   onClick={() => setSelected(p)}
                 >
                   {/* Image */}
-                  <div className="aspect-[4/3] bg-secondary/50 overflow-hidden relative">
+                  <div className="aspect-[4/3] bg-white overflow-hidden relative">
                     <img
                       src={p.src}
                       alt={title(p)}
