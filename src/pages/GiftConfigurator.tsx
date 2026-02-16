@@ -28,23 +28,23 @@ interface ProductTemplate {
 }
 
 const productTemplates: ProductTemplate[] = [
-  { id: 'trophy', nameEn: 'Crystal Trophy', nameBn: 'ক্রিস্টাল ট্রফি', image: img3, logoPositions: ['Center', 'Base'] },
-  { id: 'tie', nameEn: 'Silk Tie', nameBn: 'সিল্ক টাই', image: img1, logoPositions: ['Bottom tip', 'Label'] },
-  { id: 'pen', nameEn: 'Executive Pen Set', nameBn: 'এক্সিকিউটিভ পেন সেট', image: img5, logoPositions: ['Barrel', 'Clip', 'Cap'] },
-  { id: 'thermos', nameEn: 'Insulated Thermos', nameBn: 'ইনসুলেটেড থার্মোস', image: img8, logoPositions: ['Front', 'Back', 'Cap'] },
-  { id: 'portfolio', nameEn: 'Leather Portfolio', nameBn: 'লেদার পোর্টফোলিও', image: img9, logoPositions: ['Front cover', 'Inside flap', 'Spine'] },
-  { id: 'glassware', nameEn: 'Custom Glassware', nameBn: 'কাস্টম গ্লাসওয়্যার', image: img11, logoPositions: ['Body', 'Base'] },
+  { id: 'trophy', nameEn: 'Crystal Trophy', nameBn: 'ক্রিস্টাল ট্রফি', image: img3, logoPositions: ['Center||সেন্টার', 'Base||বেস'] },
+  { id: 'tie', nameEn: 'Silk Tie', nameBn: 'সিল্ক টাই', image: img1, logoPositions: ['Bottom tip||নিচের প্রান্ত', 'Label||লেবেল'] },
+  { id: 'pen', nameEn: 'Executive Pen Set', nameBn: 'এক্সিকিউটিভ পেন সেট', image: img5, logoPositions: ['Barrel||ব্যারেল', 'Clip||ক্লিপ', 'Cap||ক্যাপ'] },
+  { id: 'thermos', nameEn: 'Insulated Thermos', nameBn: 'ইনসুলেটেড থার্মোস', image: img8, logoPositions: ['Front||সামনে', 'Back||পিছনে', 'Cap||ক্যাপ'] },
+  { id: 'portfolio', nameEn: 'Leather Portfolio', nameBn: 'লেদার পোর্টফোলিও', image: img9, logoPositions: ['Front cover||সামনের কভার', 'Inside flap||ভিতরের ফ্ল্যাপ', 'Spine||স্পাইন'] },
+  { id: 'glassware', nameEn: 'Custom Glassware', nameBn: 'কাস্টম গ্লাসওয়্যার', image: img11, logoPositions: ['Body||বডি', 'Base||বেস'] },
 ];
 
 const colorOptions = [
-  { id: 'navy', name: 'Navy Blue', hex: '#1a365d' },
-  { id: 'black', name: 'Classic Black', hex: '#1a1a2e' },
-  { id: 'burgundy', name: 'Burgundy', hex: '#722f37' },
-  { id: 'gold', name: 'Royal Gold', hex: '#b8860b' },
-  { id: 'silver', name: 'Platinum Silver', hex: '#8c8c8c' },
-  { id: 'green', name: 'Forest Green', hex: '#2d5a27' },
-  { id: 'white', name: 'Pearl White', hex: '#f5f5f0' },
-  { id: 'brown', name: 'Cognac Brown', hex: '#6b3a2a' },
+  { id: 'navy', nameEn: 'Navy Blue', nameBn: 'নেভি ব্লু', hex: '#1a365d' },
+  { id: 'black', nameEn: 'Classic Black', nameBn: 'ক্লাসিক ব্ল্যাক', hex: '#1a1a2e' },
+  { id: 'burgundy', nameEn: 'Burgundy', nameBn: 'বারগান্ডি', hex: '#722f37' },
+  { id: 'gold', nameEn: 'Royal Gold', nameBn: 'রয়্যাল গোল্ড', hex: '#b8860b' },
+  { id: 'silver', nameEn: 'Platinum Silver', nameBn: 'প্লাটিনাম সিলভার', hex: '#8c8c8c' },
+  { id: 'green', nameEn: 'Forest Green', nameBn: 'ফরেস্ট গ্রিন', hex: '#2d5a27' },
+  { id: 'white', nameEn: 'Pearl White', nameBn: 'পার্ল হোয়াইট', hex: '#f5f5f0' },
+  { id: 'brown', nameEn: 'Cognac Brown', nameBn: 'কগন্যাক ব্রাউন', hex: '#6b3a2a' },
 ];
 
 const packagingOptions = [
@@ -77,6 +77,14 @@ const GiftConfigurator = () => {
   const product = productTemplates.find(p => p.id === selectedProduct)!;
   const color = colorOptions.find(c => c.id === selectedColor)!;
   const pkg = packagingOptions.find(p => p.id === packaging)!;
+  const colorName = lang === 'en' ? color.nameEn : color.nameBn;
+
+  // Helper to get bilingual logo position label
+  const posLabel = (pos: string) => {
+    const parts = pos.split('||');
+    return lang === 'en' ? parts[0] : (parts[1] || parts[0]);
+  };
+  const posEn = (pos: string) => pos.split('||')[0];
 
   // Set default logo position when product changes
   const positions = product.logoPositions;
@@ -86,15 +94,15 @@ const GiftConfigurator = () => {
     const productName = lang === 'en' ? product.nameEn : product.nameBn;
     const pkgName = lang === 'en' ? pkg.nameEn : pkg.nameBn;
     if (lang === 'en') {
-      return `${productName} in ${color.name}, logo on ${activeLogoPos}, ${pkgName} packaging${companyName ? ` for ${companyName}` : ''}`;
+      return `${productName} in ${colorName}, logo on ${posLabel(activeLogoPos)}, ${pkgName} packaging${companyName ? ` for ${companyName}` : ''}`;
     }
-    return `${productName} — ${color.name} রঙে, লোগো ${activeLogoPos} এ, ${pkgName} প্যাকেজিং${companyName ? ` — ${companyName} এর জন্য` : ''}`;
-  }, [product, color, activeLogoPos, pkg, companyName, lang]);
+    return `${productName} — ${colorName} রঙে, লোগো ${posLabel(activeLogoPos)} এ, ${pkgName} প্যাকেজিং${companyName ? ` — ${companyName} এর জন্য` : ''}`;
+  }, [product, color, activeLogoPos, pkg, companyName, lang, colorName]);
 
   const whatsappUrl = useMemo(() => {
     const msg = lang === 'en'
-      ? `Hi, I'd like to configure a custom gift:\n\n🎁 Product: ${product.nameEn}\n🎨 Color: ${color.name}\n📍 Logo: ${activeLogoPos}\n📦 Packaging: ${pkg.nameEn}\n📊 Quantity: ${quantity}\n🏢 Company: ${companyName || 'N/A'}\n📝 Notes: ${notes || 'None'}\n\nPlease share pricing & timeline.`
-      : `হ্যালো, আমি একটি কাস্টম গিফট কনফিগার করতে চাই:\n\n🎁 পণ্য: ${product.nameBn}\n🎨 রঙ: ${color.name}\n📍 লোগো: ${activeLogoPos}\n📦 প্যাকেজিং: ${pkg.nameBn}\n📊 পরিমাণ: ${quantity}\n🏢 কোম্পানি: ${companyName || 'N/A'}\n📝 নোট: ${notes || 'নেই'}\n\nদয়া করে মূল্য ও সময়সীমা জানান।`;
+      ? `Hi, I'd like to configure a custom gift:\n\n🎁 Product: ${product.nameEn}\n🎨 Color: ${color.nameEn}\n📍 Logo: ${posEn(activeLogoPos)}\n📦 Packaging: ${pkg.nameEn}\n📊 Quantity: ${quantity}\n🏢 Company: ${companyName || 'N/A'}\n📝 Notes: ${notes || 'None'}\n\nPlease share pricing & timeline.`
+      : `হ্যালো, আমি একটি কাস্টম গিফট কনফিগার করতে চাই:\n\n🎁 পণ্য: ${product.nameBn}\n🎨 রঙ: ${color.nameBn}\n📍 লোগো: ${posLabel(activeLogoPos)}\n📦 প্যাকেজিং: ${pkg.nameBn}\n📊 পরিমাণ: ${quantity}\n🏢 কোম্পানি: ${companyName || 'N/A'}\n📝 নোট: ${notes || 'নেই'}\n\nদয়া করে মূল্য ও সময়সীমা জানান।`;
     return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`;
   }, [product, color, activeLogoPos, pkg, quantity, companyName, notes, lang, whatsappNumber]);
 
@@ -191,7 +199,7 @@ const GiftConfigurator = () => {
                         className={`w-5 h-5 rounded-full border border-border/50 shrink-0 ${selectedColor === c.id ? 'ring-2 ring-accent ring-offset-1' : ''}`}
                         style={{ backgroundColor: c.hex }}
                       />
-                      <span className="text-xs font-medium" style={{ fontFamily: 'DM Sans, sans-serif' }}>{c.name}</span>
+                      <span className="text-xs font-medium" style={{ fontFamily: 'DM Sans, sans-serif' }}>{lang === 'en' ? c.nameEn : c.nameBn}</span>
                     </button>
                   ))}
                 </div>
@@ -216,7 +224,7 @@ const GiftConfigurator = () => {
                       }`}
                       style={{ fontFamily: 'DM Sans, sans-serif' }}
                     >
-                      {pos}
+                      {posLabel(pos)}
                     </button>
                   ))}
                 </div>
@@ -323,12 +331,12 @@ const GiftConfigurator = () => {
                     />
                     {/* Logo position indicator */}
                     <div className="absolute top-4 right-4 bg-primary/90 text-primary-foreground text-[10px] font-semibold px-3 py-1 rounded-full backdrop-blur-sm" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                      Logo: {activeLogoPos}
+                      {lang === 'en' ? 'Logo' : 'লোগো'}: {posLabel(activeLogoPos)}
                     </div>
                     {/* Color swatch */}
                     <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-sm">
                       <span className="w-4 h-4 rounded-full border" style={{ backgroundColor: color.hex }} />
-                      <span className="text-[11px] font-medium" style={{ fontFamily: 'DM Sans, sans-serif' }}>{color.name}</span>
+                      <span className="text-[11px] font-medium" style={{ fontFamily: 'DM Sans, sans-serif' }}>{colorName}</span>
                     </div>
                   </div>
 
@@ -345,8 +353,8 @@ const GiftConfigurator = () => {
 
                     {/* Config badges */}
                     <div className="flex flex-wrap gap-1.5">
-                      <span className="text-[10px] font-medium bg-accent/10 text-accent px-2.5 py-1 rounded-full">{color.name}</span>
-                      <span className="text-[10px] font-medium bg-primary/10 text-primary px-2.5 py-1 rounded-full">{activeLogoPos}</span>
+                      <span className="text-[10px] font-medium bg-accent/10 text-accent px-2.5 py-1 rounded-full">{colorName}</span>
+                      <span className="text-[10px] font-medium bg-primary/10 text-primary px-2.5 py-1 rounded-full">{posLabel(activeLogoPos)}</span>
                       <span className="text-[10px] font-medium bg-secondary text-foreground px-2.5 py-1 rounded-full">{lang === 'en' ? pkg.nameEn : pkg.nameBn}</span>
                       <span className="text-[10px] font-medium bg-secondary text-foreground px-2.5 py-1 rounded-full">
                         {quantityTiers.find(t => `${t.min}-${t.max}` === quantity)?.[lang === 'en' ? 'labelEn' : 'labelBn']}
