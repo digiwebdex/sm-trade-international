@@ -1,41 +1,38 @@
 
 
-## Update Product Images from Uploaded Files
+# Hero Section Enhancement Plan
 
-### Problem
-All 12 products in the database currently use placeholder text images (e.g., `placehold.co/600x400/...`). You have real product photos in the `public/temp/` folder that should replace them.
+The current hero has a solid foundation but can be made significantly more attractive with these visual upgrades:
 
-### Plan
+## What Changes
 
-**Step 1: Upload images to cloud storage**
-Upload the relevant images from `public/temp/` to the `cms-images/products/` storage bucket.
+### 1. Animated Gold Decorative Elements
+- Add a thin animated gold line on the left side of the text content as a vertical accent bar
+- Add a gold diamond/dot divider between subtitle and CTA buttons (matching the pattern used in other sections)
 
-**Step 2: Map images to products and update the database**
-Match each product to the most appropriate uploaded image:
+### 2. Bigger, Bolder Typography with Gold Accent
+- Add a gold gradient highlight on a key word in the title (e.g., "Premium" or "Corporate") using `text-gradient`
+- Increase heading size slightly on large screens (`xl:text-7xl`)
 
-| Product | Image File |
-|---|---|
-| Premium Silk Tie Set | `ties-collection.jpg` |
-| Branded Leather Wallet | `leather-file-black.jpg` |
-| Crystal Award Trophy | `crystal-cube-padma.jpg` |
-| Executive Pen Set | `custom-branded-pens.jpg` |
-| Custom USB Flash Drive | `wooden-pen-stand.png` |
-| Branded Coffee Mug | `custom-thermos.jpg` |
-| Leather Laptop Bag | `leather-zippered-folder.jpg` |
-| Glass Paperweight | `crystal-paperweight.jpg` |
-| Desk Organizer Set | `crystal-pen-holder-pens.jpg` |
-| Custom Medal & Badge | `crystal-round-bpatc.jpg` |
-| Promotional T-Shirt | `product-display-all.jpg` |
-| Leather Card Holder | `blue-leather-file.png` |
+### 3. Floating Stats/Trust Badges
+- Add a frosted-glass stats strip at the bottom of the hero showing key numbers (e.g., "500+ Clients", "10+ Years", "1000+ Products") with gold icons
+- Uses `backdrop-blur` and semi-transparent background for a premium glassmorphism look
 
-**Step 3: Update product `image_url` fields**
-Run database updates to set each product's `image_url` to its new cloud storage URL.
+### 4. Subtle Parallax Shimmer Overlay
+- Add a subtle animated shimmer/gradient overlay that slowly shifts across the hero for visual depth (using the existing `heroGradientShift` keyframe already defined in `index.css`)
 
-### Notes
-- Some image-to-product mappings are approximate based on filenames. You can adjust them after the update via the admin panel.
-- Remaining unused images (like `tie-gift-box.png`, `wooden-tissue-box.png`, etc.) can be added as new products later if needed.
+### 5. Improved CTA Buttons
+- Add a subtle pulse/glow animation to the primary gold CTA button to draw attention
+- Add an arrow icon to the secondary button as well for visual balance
 
-### Technical Details
-- Each image will be uploaded to `cms-images/products/` via the Supabase storage API
-- Product rows will be updated with the public URLs using SQL UPDATE statements
-- No code changes needed -- the `ProductsSection` already renders `image_url` from the database
+### 6. Bottom Fade Transition
+- Add a smooth gradient fade at the bottom of the hero that transitions into the next section's background color, eliminating the hard edge
+
+## Technical Details
+
+### Files to modify:
+- **`src/components/HeroSection.tsx`** -- All visual changes above
+- **`src/index.css`** -- Add a `@keyframes shimmer` for the gold shimmer overlay and a subtle `pulse-gold` glow animation for the CTA button
+
+### No new dependencies required. All changes use existing Tailwind utilities, CSS custom properties, and inline styles.
+
