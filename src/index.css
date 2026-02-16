@@ -6,72 +6,72 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 40 25% 97%;
     --foreground: 222 47% 11%;
 
-    --card: 0 0% 100%;
+    --card: 40 20% 99%;
     --card-foreground: 222 47% 11%;
 
-    --popover: 0 0% 100%;
+    --popover: 40 20% 99%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 220 60% 20%;
+    --primary-foreground: 40 30% 96%;
 
-    --secondary: 210 40% 96%;
+    --secondary: 40 18% 93%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 40 15% 94%;
+    --muted-foreground: 220 10% 46%;
 
-    --accent: 210 40% 96%;
+    --accent: 38 72% 50%;
     --accent-foreground: 222 47% 11%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    --border: 40 15% 88%;
+    --input: 40 15% 88%;
+    --ring: 220 60% 20%;
 
     --radius: 0.5rem;
 
-    --sm-green: 221 83% 53%;
-    --sm-green-dark: 221 83% 43%;
-    --sm-gold: 221 83% 53%;
-    --sm-gold-dark: 221 83% 43%;
-    --sm-black: 222 47% 11%;
-    --sm-white: 0 0% 100%;
-    --sm-gray: 210 40% 96%;
-    --sm-gray-dark: 215 16% 37%;
+    --sm-green: 220 60% 20%;
+    --sm-green-dark: 220 60% 14%;
+    --sm-gold: 38 72% 50%;
+    --sm-gold-dark: 38 72% 40%;
+    --sm-black: 222 47% 8%;
+    --sm-white: 40 25% 97%;
+    --sm-gray: 40 15% 94%;
+    --sm-gray-dark: 220 15% 30%;
 
-    --sm-red: 221 83% 53%;
-    --sm-red-dark: 221 83% 43%;
+    --sm-red: 220 60% 20%;
+    --sm-red-dark: 220 60% 14%;
   }
 
   .dark {
     --background: 222 47% 6%;
-    --foreground: 210 40% 92%;
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 92%;
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 92%;
-    --primary: 217 91% 60%;
+    --foreground: 40 20% 92%;
+    --card: 222 40% 9%;
+    --card-foreground: 40 20% 92%;
+    --popover: 222 40% 9%;
+    --popover-foreground: 40 20% 92%;
+    --primary: 38 72% 50%;
     --primary-foreground: 222 47% 6%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 92%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 55%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 92%;
+    --secondary: 220 30% 15%;
+    --secondary-foreground: 40 20% 92%;
+    --muted: 220 30% 15%;
+    --muted-foreground: 40 10% 55%;
+    --accent: 38 72% 50%;
+    --accent-foreground: 40 20% 92%;
     --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 92%;
-    --border: 217 33% 18%;
-    --input: 217 33% 18%;
-    --ring: 217 91% 60%;
+    --destructive-foreground: 40 20% 92%;
+    --border: 220 25% 18%;
+    --input: 220 25% 18%;
+    --ring: 38 72% 50%;
 
-    --sm-red: 217 91% 60%;
-    --sm-red-dark: 217 91% 50%;
+    --sm-red: 38 72% 50%;
+    --sm-red-dark: 38 72% 40%;
   }
 }
 
@@ -91,7 +91,7 @@
 @layer utilities {
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--sm-green)), hsl(var(--sm-gold)));
+    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--sm-gold)));
   }
   .bg-sm-red {
     background-color: hsl(var(--sm-green));
