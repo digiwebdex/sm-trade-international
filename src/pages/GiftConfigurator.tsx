@@ -6,6 +6,8 @@ import { MessageCircle, Palette, Image, Package, Send, RotateCcw, Link2, Check }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 import TopBar from '@/components/TopBar';
 import Navbar from '@/components/Navbar';
 import { lazy, Suspense } from 'react';
@@ -91,6 +93,7 @@ const GiftConfigurator = () => {
   const [companyName, setCompanyName] = useState(paramCompany || '');
   const [notes, setNotes] = useState(paramNotes || '');
   const [linkCopied, setLinkCopied] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const product = productTemplates.find(p => p.id === selectedProduct)!;
   const color = colorOptions.find(c => c.id === selectedColor)!;
@@ -413,40 +416,37 @@ const GiftConfigurator = () => {
 
                     {/* Actions */}
                     <div className="flex flex-col gap-2">
-                      <Button asChild className="bg-[hsl(142,70%,40%)] hover:bg-[hsl(142,70%,35%)] text-white w-full">
-                        <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          <span style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                            {lang === 'en' ? 'Send via WhatsApp' : 'WhatsApp এ পাঠান'}
-                          </span>
-                        </a>
-                      </Button>
-                      <Button asChild variant="default" className="w-full">
-                        <a href="/#contact">
-                          <Send className="h-4 w-4 mr-2" />
-                          <span style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                            {lang === 'en' ? 'Request Formal Quote' : 'আনুষ্ঠানিক কোটেশন'}
-                          </span>
-                        </a>
-                      </Button>
                       <Button
-                        variant="outline"
-                        className="w-full gap-2"
-                        onClick={copyShareLink}
+                        className="w-full"
+                        size="lg"
+                        onClick={() => setReviewOpen(true)}
                       >
-                        {linkCopied ? <Check className="h-4 w-4 text-green-600" /> : <Link2 className="h-4 w-4" />}
+                        <Send className="h-4 w-4 mr-2" />
                         <span style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                          {linkCopied
-                            ? (lang === 'en' ? 'Link Copied!' : 'লিংক কপি হয়েছে!')
-                            : (lang === 'en' ? 'Share Configuration' : 'কনফিগারেশন শেয়ার করুন')}
+                          {lang === 'en' ? 'Review & Send Quote' : 'পর্যালোচনা ও কোটেশন পাঠান'}
                         </span>
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={reset} className="text-muted-foreground">
-                        <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-                        <span style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                          {lang === 'en' ? 'Reset' : 'রিসেট'}
-                        </span>
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          className="flex-1 gap-2"
+                          size="sm"
+                          onClick={copyShareLink}
+                        >
+                          {linkCopied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Link2 className="h-3.5 w-3.5" />}
+                          <span className="text-xs" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                            {linkCopied
+                              ? (lang === 'en' ? 'Copied!' : 'কপি!')
+                              : (lang === 'en' ? 'Share Link' : 'শেয়ার')}
+                          </span>
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={reset} className="text-muted-foreground">
+                          <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                          <span className="text-xs" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                            {lang === 'en' ? 'Reset' : 'রিসেট'}
+                          </span>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -457,6 +457,92 @@ const GiftConfigurator = () => {
       </section>
 
       <Suspense fallback={null}><Footer /></Suspense>
+
+      {/* Quote Review Dialog */}
+      <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+              {lang === 'en' ? 'Review Your Quote' : 'আপনার কোটেশন পর্যালোচনা করুন'}
+            </DialogTitle>
+            <DialogDescription style={{ fontFamily: 'DM Sans, sans-serif' }}>
+              {lang === 'en'
+                ? 'Please confirm all details before submitting your quote request.'
+                : 'কোটেশন অনুরোধ জমা দেওয়ার আগে সমস্ত বিবরণ নিশ্চিত করুন।'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            {/* Product preview */}
+            <div className="flex gap-4 items-center p-3 rounded-xl bg-muted/50 border border-border/50">
+              <div className="w-16 h-16 rounded-lg bg-white overflow-hidden flex-shrink-0">
+                <img src={product.image} alt="" className="w-full h-full object-contain p-1" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-sm" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                  {lang === 'en' ? product.nameEn : product.nameBn}
+                </h4>
+                <p className="text-xs text-muted-foreground mt-0.5" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                  {summaryText}
+                </p>
+              </div>
+            </div>
+
+            {/* Detail rows */}
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+              {[
+                [lang === 'en' ? 'Color' : 'রঙ', colorName],
+                [lang === 'en' ? 'Logo Position' : 'লোগো অবস্থান', posLabel(activeLogoPos)],
+                [lang === 'en' ? 'Packaging' : 'প্যাকেজিং', lang === 'en' ? pkg.nameEn : pkg.nameBn],
+                [lang === 'en' ? 'Quantity' : 'পরিমাণ', quantityTiers.find(t => `${t.min}-${t.max}` === quantity)?.[lang === 'en' ? 'labelEn' : 'labelBn'] || quantity],
+                [lang === 'en' ? 'Company' : 'কোম্পানি', companyName || '—'],
+                [lang === 'en' ? 'Notes' : 'নোট', notes || '—'],
+              ].map(([label, value], i) => (
+                <div key={i} className={i % 2 === 0 ? '' : ''}>
+                  <span className="text-muted-foreground text-xs">{label}</span>
+                  <p className="font-medium text-sm truncate">{value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Color swatch */}
+            <div className="flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: color.hex }} />
+              <span className="text-xs text-muted-foreground" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                {colorName} ({color.hex})
+              </span>
+            </div>
+
+            <Separator />
+
+            {/* Confirmation actions */}
+            <div className="flex flex-col gap-2">
+              <Button asChild className="bg-[hsl(142,70%,40%)] hover:bg-[hsl(142,70%,35%)] text-white w-full">
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => setReviewOpen(false)}>
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  <span style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                    {lang === 'en' ? 'Confirm & Send via WhatsApp' : 'নিশ্চিত করুন ও WhatsApp এ পাঠান'}
+                  </span>
+                </a>
+              </Button>
+              <Button asChild variant="default" className="w-full">
+                <a href="/#contact" onClick={() => setReviewOpen(false)}>
+                  <Send className="h-4 w-4 mr-2" />
+                  <span style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                    {lang === 'en' ? 'Confirm & Request Formal Quote' : 'নিশ্চিত করুন ও আনুষ্ঠানিক কোটেশন'}
+                  </span>
+                </a>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setReviewOpen(false)} className="text-muted-foreground">
+                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                <span style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                  {lang === 'en' ? 'Go Back & Edit' : 'ফিরে যান ও সম্পাদনা করুন'}
+                </span>
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
