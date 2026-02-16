@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { X, ZoomIn } from 'lucide-react';
+import { ZoomIn } from 'lucide-react';
 import TopBar from '@/components/TopBar';
 import Navbar from '@/components/Navbar';
+import GalleryLightbox from '@/components/gallery/GalleryLightbox';
 import { lazy, Suspense } from 'react';
 
 const Footer = lazy(() => import('@/components/Footer'));
@@ -57,8 +58,7 @@ const categories = [
 const Gallery = () => {
   const { lang } = useLanguage();
   const [filter, setFilter] = useState('all');
-  const [lightbox, setLightbox] = useState<GalleryItem | null>(null);
-  const [lightboxIdx, setLightboxIdx] = useState(0);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
   // Try DB gallery first
   const { data: dbGallery = [] } = useQuery({
@@ -94,16 +94,12 @@ const Gallery = () => {
 
   const title = (i: GalleryItem) => lang === 'en' ? i.titleEn : i.titleBn;
 
-  const openLightbox = (item: GalleryItem, idx: number) => {
-    setLightbox(item);
-    setLightboxIdx(idx);
-  };
+  const lightboxItems = useMemo(() =>
+    filtered.map(i => ({ src: i.src, title: title(i) })),
+    [filtered, lang]
+  );
 
-  const navigate = (dir: 1 | -1) => {
-    const newIdx = (lightboxIdx + dir + filtered.length) % filtered.length;
-    setLightboxIdx(newIdx);
-    setLightbox(filtered[newIdx]);
-  };
+  const onNavigate = useCallback((idx: number) => setLightboxIdx(idx), []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -164,7 +160,7 @@ const Gallery = () => {
               <div
                 key={i}
                 className="break-inside-avoid group cursor-pointer relative rounded-2xl overflow-hidden bg-white border border-border/30 hover:shadow-xl transition-all duration-300"
-                onClick={() => openLightbox(item, i)}
+                onClick={() => setLightboxIdx(i)}
               >
                 <img
                   src={item.src}
@@ -209,40 +205,13 @@ const Gallery = () => {
       <Suspense fallback={null}><Footer /></Suspense>
 
       {/* Lightbox */}
-      {lightbox && (
-        <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
-          <button className="absolute top-4 right-4 text-white/80 hover:text-white z-10" onClick={() => setLightbox(null)}>
-            <X className="h-8 w-8" />
-          </button>
-          {/* Nav arrows */}
-          <button
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white text-4xl z-10 select-none"
-            onClick={e => { e.stopPropagation(); navigate(-1); }}
-          >
-            ‹
-          </button>
-          <button
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white text-4xl z-10 select-none"
-            onClick={e => { e.stopPropagation(); navigate(1); }}
-          >
-            ›
-          </button>
-          <div className="max-w-4xl w-full flex flex-col items-center gap-6" onClick={e => e.stopPropagation()}>
-            <div className="bg-white rounded-2xl p-6 max-h-[70vh] flex items-center justify-center">
-              <img
-                src={lightbox.src}
-                alt={title(lightbox)}
-                className="max-w-full max-h-[60vh] object-contain"
-              />
-            </div>
-            <div className="text-center">
-              <h3 className="text-xl font-bold text-white mb-1">{title(lightbox)}</h3>
-              <p className="text-white/40 text-sm">
-                {lightboxIdx + 1} / {filtered.length}
-              </p>
-            </div>
-          </div>
-        </div>
+      {lightboxIdx !== null && (
+        <GalleryLightbox
+          items={lightboxItems}
+          currentIndex={lightboxIdx}
+          onClose={() => setLightboxIdx(null)}
+          onNavigate={onNavigate}
+        />
       )}
     </div>
   );
