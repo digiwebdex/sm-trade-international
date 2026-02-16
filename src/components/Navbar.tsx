@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import logo from '@/assets/logo.jpeg';
 
 const Navbar = () => {
   const { t } = useLanguage();
+  const location = useLocation();
+  const isHome = location.pathname === '/';
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // For hash links: if not on home page, prepend "/"
+  const resolveHref = (href: string) => {
+    if (href.startsWith('#') && !isHome) return '/' + href;
+    return href;
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -34,7 +42,7 @@ const Navbar = () => {
       }`}
     >
       <div className="container mx-auto px-4 flex items-center justify-between h-16 relative">
-        <a href="#home" className="flex items-center gap-3 group">
+        <a href={resolveHref('#home')} className="flex items-center gap-3 group">
           <img src={logo} alt="S. M. Trade International" className="h-10 w-auto rounded" />
           <div className="hidden md:flex items-center gap-3">
             <div className="w-px h-7 bg-[hsl(var(--sm-gold))]/40" />
@@ -58,7 +66,7 @@ const Navbar = () => {
             ) : (
               <a
                 key={l.key}
-                href={l.href}
+                href={resolveHref(l.href)}
                 className="relative px-4 py-2 font-medium text-sm text-foreground/80 hover:text-foreground transition-colors duration-300 group"
               >
                 {t(l.key)}
@@ -86,7 +94,7 @@ const Navbar = () => {
             ) : (
               <a
                 key={l.key}
-                href={l.href}
+                href={resolveHref(l.href)}
                 onClick={() => setMobileOpen(false)}
                 className="block py-3 font-medium hover:text-primary transition-colors border-b border-border/30 last:border-0"
               >
