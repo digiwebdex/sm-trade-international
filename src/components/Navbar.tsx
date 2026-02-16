@@ -23,17 +23,33 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-background/95 backdrop-blur shadow-md' : 'bg-background'}`}>
+    <nav
+      className={`sticky top-0 z-50 transition-all duration-500 ${
+        scrolled
+          ? 'bg-background/80 backdrop-blur-lg shadow-lg border-b border-border/50'
+          : 'bg-background border-b border-transparent'
+      }`}
+    >
       <div className="container mx-auto px-4 flex items-center justify-between h-16 relative">
-        <a href="#home" className="flex items-center gap-2">
+        <a href="#home" className="flex items-center gap-3 group">
           <img src={logo} alt="S. M. Trade International" className="h-10 w-auto rounded" />
-          <span className="font-bold text-xl hidden md:inline">S. M. Trade International</span>
+          <div className="hidden md:flex items-center gap-3">
+            <div className="w-px h-7 bg-[hsl(var(--sm-gold))]/40" />
+            <span className="font-bold text-xl">S. M. Trade International</span>
+          </div>
         </a>
-        <span className="md:hidden absolute left-1/2 -translate-x-1/2 font-bold text-sm tracking-wide text-center leading-tight">S. M. Trade International</span>
-        <div className="hidden md:flex items-center gap-6">
+        <span className="md:hidden absolute left-1/2 -translate-x-1/2 font-bold text-sm tracking-wide text-center leading-tight">
+          S. M. Trade International
+        </span>
+        <div className="hidden md:flex items-center gap-1">
           {links.map(l => (
-            <a key={l.key} href={l.href} className="font-medium hover:text-primary transition-colors text-sm">
+            <a
+              key={l.key}
+              href={l.href}
+              className="relative px-4 py-2 font-medium text-sm text-foreground/80 hover:text-foreground transition-colors duration-300 group"
+            >
               {t(l.key)}
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-[hsl(var(--sm-gold))] group-hover:w-3/4 transition-all duration-300 rounded-full" />
             </a>
           ))}
         </div>
@@ -42,9 +58,14 @@ const Navbar = () => {
         </button>
       </div>
       {mobileOpen && (
-        <div className="md:hidden bg-background border-t px-4 pb-4">
+        <div className="md:hidden bg-background/95 backdrop-blur-lg border-t border-border/50 px-4 pb-4">
           {links.map(l => (
-            <a key={l.key} href={l.href} onClick={() => setMobileOpen(false)} className="block py-2 font-medium hover:text-primary transition-colors">
+            <a
+              key={l.key}
+              href={l.href}
+              onClick={() => setMobileOpen(false)}
+              className="block py-3 font-medium hover:text-primary transition-colors border-b border-border/30 last:border-0"
+            >
               {t(l.key)}
             </a>
           ))}

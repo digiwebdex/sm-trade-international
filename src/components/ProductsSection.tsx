@@ -179,10 +179,24 @@ const ProductsSection = () => {
   const noResults = lang === 'en' ? 'No products found.' : 'কোনো পণ্য পাওয়া যায়নি।';
 
   return (
-    <section id="products" className="py-20 bg-secondary">
-      <div className="container mx-auto px-4">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">{t('products.title')}</h2>
-        <div className="w-16 h-1 bg-sm-gold mx-auto mb-8 rounded" />
+    <section id="products" className="py-24 bg-secondary relative overflow-hidden">
+      {/* Subtle pattern */}
+      <div className="absolute inset-0 opacity-[0.02]" style={{
+        backgroundImage: 'radial-gradient(hsl(var(--sm-gold)) 1px, transparent 1px)',
+        backgroundSize: '28px 28px',
+      }} />
+      <div className="container mx-auto px-4 relative">
+        <div className="text-center mb-10">
+          <span className="inline-block text-accent text-xs font-semibold tracking-widest uppercase mb-3" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+            {lang === 'en' ? 'Our Products' : 'আমাদের পণ্য'}
+          </span>
+          <h2 className="text-3xl md:text-5xl font-bold mb-5">{t('products.title')}</h2>
+          <div className="flex items-center justify-center gap-3">
+            <div className="h-px w-12 bg-accent/40" />
+            <div className="w-2 h-2 rotate-45 bg-accent/70" />
+            <div className="h-px w-12 bg-accent/40" />
+          </div>
+        </div>
 
         {/* Search bar */}
         <div className="max-w-md mx-auto mb-6 relative">
@@ -221,19 +235,27 @@ const ProductsSection = () => {
         {filtered.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">{noResults}</div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {filtered.map((p, i) => (
               <div
                 key={i}
-                className="group cursor-pointer overflow-hidden rounded-xl bg-background shadow-sm hover:shadow-xl transition-all duration-300 relative"
+                className="group cursor-pointer overflow-hidden rounded-2xl bg-background shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative border border-border/30"
                 onClick={() => setLightbox(p)}
               >
                 {!p.isActive && (
-                  <span className="absolute top-2 left-2 z-10 bg-muted text-muted-foreground text-[10px] px-2 py-0.5 rounded-full">
+                  <span className="absolute top-3 left-3 z-10 bg-muted text-muted-foreground text-[10px] px-2 py-0.5 rounded-full">
                     {lang === 'en' ? 'Inactive' : 'নিষ্ক্রিয়'}
                   </span>
                 )}
-                <div className={`aspect-square overflow-hidden bg-muted ${!p.isActive ? 'opacity-50' : ''}`}>
+                {p.categoryLabel && (
+                  <span className="absolute top-3 right-3 z-10 bg-primary/80 text-primary-foreground text-[10px] px-2.5 py-1 rounded-full backdrop-blur-sm">
+                    {p.categoryLabel}
+                  </span>
+                )}
+                {/* Gold corner accents on hover */}
+                <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-[hsl(var(--sm-gold))]/0 group-hover:border-[hsl(var(--sm-gold))]/60 transition-all duration-300 rounded-tl-2xl z-10" />
+                <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-[hsl(var(--sm-gold))]/0 group-hover:border-[hsl(var(--sm-gold))]/60 transition-all duration-300 rounded-br-2xl z-10" />
+                <div className={`aspect-square overflow-hidden bg-muted relative ${!p.isActive ? 'opacity-50' : ''}`}>
                   {p.src ? (
                     <img
                       src={p.src}
@@ -246,12 +268,10 @@ const ProductsSection = () => {
                       {p.title}
                     </div>
                   )}
-                </div>
-                <div className="p-3 space-y-1">
-                  <p className="font-medium text-sm text-center line-clamp-1">{p.title}</p>
-                  {p.desc && (
-                    <p className="text-xs text-muted-foreground text-center line-clamp-2">{p.desc}</p>
-                  )}
+                  {/* Frosted-glass title overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-3 pt-10">
+                    <p className="font-semibold text-sm text-white line-clamp-1 drop-shadow-sm">{p.title}</p>
+                  </div>
                 </div>
               </div>
             ))}
