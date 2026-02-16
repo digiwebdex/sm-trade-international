@@ -1,26 +1,17 @@
-import { lazy, Suspense } from 'react';
 import TopBar from '@/components/TopBar';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 import MobileBottomBar from '@/components/MobileBottomBar';
-
-// Lazy-load below-fold sections
-const AboutSection = lazy(() => import('@/components/AboutSection'));
-const ServicesSection = lazy(() => import('@/components/ServicesSection'));
-const ProcessSection = lazy(() => import('@/components/ProcessSection'));
-const ProductsSection = lazy(() => import('@/components/ProductsSection'));
-const ClientsSection = lazy(() => import('@/components/ClientsSection'));
-const BulkOrderCalculator = lazy(() => import('@/components/BulkOrderCalculator'));
-const QuoteRequestForm = lazy(() => import('@/components/QuoteRequestForm'));
-const ContactSection = lazy(() => import('@/components/ContactSection'));
-const Footer = lazy(() => import('@/components/Footer'));
-
-const SectionFallback = () => (
-  <div className="min-h-[200px] flex items-center justify-center">
-    <div className="w-8 h-8 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin" />
-  </div>
-);
+import AboutSection from '@/components/AboutSection';
+import ServicesSection from '@/components/ServicesSection';
+import ProcessSection from '@/components/ProcessSection';
+import ProductsSection from '@/components/ProductsSection';
+import ClientsSection from '@/components/ClientsSection';
+import BulkOrderCalculator from '@/components/BulkOrderCalculator';
+import QuoteRequestForm from '@/components/QuoteRequestForm';
+import ContactSection from '@/components/ContactSection';
+import Footer from '@/components/Footer';
 
 const Index = () => {
   return (
@@ -29,20 +20,16 @@ const Index = () => {
       <Navbar />
       <main>
         <HeroSection />
-        <Suspense fallback={<SectionFallback />}>
-          <AboutSection />
-          <ServicesSection />
-          <ProcessSection />
-          <ProductsSection />
-          <ClientsSection />
-          <BulkOrderCalculator />
-          <QuoteRequestForm />
-          <ContactSection />
-        </Suspense>
+        <AboutSection />
+        <ServicesSection />
+        <ProcessSection />
+        <ProductsSection />
+        <ClientsSection />
+        <BulkOrderCalculator />
+        <QuoteRequestForm />
+        <ContactSection />
       </main>
-      <Suspense fallback={null}>
-        <Footer />
-      </Suspense>
+      <Footer />
       <WhatsAppFloat />
       <MobileBottomBar />
     </div>
