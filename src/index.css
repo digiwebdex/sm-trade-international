@@ -127,3 +127,18 @@ html {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes pulseGold {
+  0%, 100% { box-shadow: 0 0 0 0 hsla(38, 50%, 58%, 0.4); }
+  50% { box-shadow: 0 0 20px 6px hsla(38, 50%, 58%, 0.15); }
+}
+
+@keyframes growHeight {
+  from { height: 0; }
+  to { height: 100%; }
+}
