@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
-import { MessageCircle, Palette, Image, Package, Send, RotateCcw } from 'lucide-react';
+import { MessageCircle, Palette, Image, Package, Send, RotateCcw, Link2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -64,15 +65,32 @@ const quantityTiers = [
 const GiftConfigurator = () => {
   const { lang } = useLanguage();
   const { get } = useSiteSettings();
+  const [searchParams] = useSearchParams();
   const whatsappNumber = (get('contact', 'whatsapp_number', '8801867666888') as string).replace(/[^0-9]/g, '') || '8801867666888';
 
-  const [selectedProduct, setSelectedProduct] = useState<string>('trophy');
-  const [selectedColor, setSelectedColor] = useState<string>('navy');
-  const [logoPosition, setLogoPosition] = useState<string>('');
-  const [packaging, setPackaging] = useState<string>('premium');
-  const [quantity, setQuantity] = useState<string>('50-199');
-  const [companyName, setCompanyName] = useState('');
-  const [notes, setNotes] = useState('');
+  // Initialize state from URL params or defaults
+  const paramProduct = searchParams.get('product');
+  const paramColor = searchParams.get('color');
+  const paramLogo = searchParams.get('logo');
+  const paramPkg = searchParams.get('pkg');
+  const paramQty = searchParams.get('qty');
+  const paramCompany = searchParams.get('company');
+  const paramNotes = searchParams.get('notes');
+
+  const [selectedProduct, setSelectedProduct] = useState<string>(
+    productTemplates.some(p => p.id === paramProduct) ? paramProduct! : 'trophy'
+  );
+  const [selectedColor, setSelectedColor] = useState<string>(
+    colorOptions.some(c => c.id === paramColor) ? paramColor! : 'navy'
+  );
+  const [logoPosition, setLogoPosition] = useState<string>(paramLogo || '');
+  const [packaging, setPackaging] = useState<string>(
+    packagingOptions.some(p => p.id === paramPkg) ? paramPkg! : 'premium'
+  );
+  const [quantity, setQuantity] = useState<string>(paramQty || '50-199');
+  const [companyName, setCompanyName] = useState(paramCompany || '');
+  const [notes, setNotes] = useState(paramNotes || '');
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const product = productTemplates.find(p => p.id === selectedProduct)!;
   const color = colorOptions.find(c => c.id === selectedColor)!;
@@ -106,6 +124,36 @@ const GiftConfigurator = () => {
     return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`;
   }, [product, color, activeLogoPos, pkg, quantity, companyName, notes, lang, whatsappNumber]);
 
+  const getShareableUrl = useCallback(() => {
+    const params = new URLSearchParams();
+    params.set('product', selectedProduct);
+    params.set('color', selectedColor);
+    if (activeLogoPos) params.set('logo', activeLogoPos);
+    params.set('pkg', packaging);
+    params.set('qty', quantity);
+    if (companyName) params.set('company', companyName);
+    if (notes) params.set('notes', notes);
+    return `${window.location.origin}/configurator?${params.toString()}`;
+  }, [selectedProduct, selectedColor, activeLogoPos, packaging, quantity, companyName, notes]);
+
+  const copyShareLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(getShareableUrl());
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // fallback
+      const input = document.createElement('input');
+      input.value = getShareableUrl();
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    }
+  }, [getShareableUrl]);
+
   const reset = () => {
     setSelectedProduct('trophy');
     setSelectedColor('navy');
@@ -114,6 +162,8 @@ const GiftConfigurator = () => {
     setQuantity('50-199');
     setCompanyName('');
     setNotes('');
+    // Clear URL params
+    window.history.replaceState({}, '', '/configurator');
   };
 
   return (
@@ -378,6 +428,18 @@ const GiftConfigurator = () => {
                             {lang === 'en' ? 'Request Formal Quote' : 'আনুষ্ঠানিক কোটেশন'}
                           </span>
                         </a>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={copyShareLink}
+                      >
+                        {linkCopied ? <Check className="h-4 w-4 text-green-600" /> : <Link2 className="h-4 w-4" />}
+                        <span style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                          {linkCopied
+                            ? (lang === 'en' ? 'Link Copied!' : 'লিংক কপি হয়েছে!')
+                            : (lang === 'en' ? 'Share Configuration' : 'কনফিগারেশন শেয়ার করুন')}
+                        </span>
                       </Button>
                       <Button variant="ghost" size="sm" onClick={reset} className="text-muted-foreground">
                         <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
