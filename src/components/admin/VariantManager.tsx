@@ -6,9 +6,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, ImageIcon, GripVertical } from 'lucide-react';
+import { Plus, Pencil, Trash2, ImageIcon, GripVertical, Expand } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import BulkUploadZone, { type FileItem } from '@/components/admin/BulkUploadZone';
+import GalleryLightbox from '@/components/gallery/GalleryLightbox';
 import { cn } from '@/lib/utils';
 
 interface VariantForm {
@@ -41,6 +42,7 @@ const VariantManager = ({ productId }: VariantManagerProps) => {
   const [galleryVariantId, setGalleryVariantId] = useState<string | null>(null);
   const [bulkFiles, setBulkFiles] = useState<FileItem[]>([]);
   const [bulkImporting, setBulkImporting] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const { data: variants = [], isLoading } = useQuery({
     queryKey: ['admin-variants', productId],
@@ -369,11 +371,23 @@ const VariantManager = ({ productId }: VariantManagerProps) => {
             {/* Existing images */}
             {galleryImages.length > 0 && (
               <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                {galleryImages.map(img => (
+                {galleryImages.map((img, idx) => (
                   <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden border border-border group">
-                    <img src={img.image_url} alt="" className="w-full h-full object-cover" />
+                    <img
+                      src={img.image_url}
+                      alt=""
+                      className="w-full h-full object-cover cursor-pointer"
+                      onClick={() => setLightboxIndex(idx)}
+                    />
                     <button
-                      onClick={() => { if (confirm('Remove?')) deleteImageMutation.mutate(img.id); }}
+                      onClick={() => setLightboxIndex(idx)}
+                      className="absolute bottom-1 left-1 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="View full screen"
+                    >
+                      <Expand className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); if (confirm('Remove?')) deleteImageMutation.mutate(img.id); }}
                       className="absolute top-1 right-1 bg-destructive text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Trash2 className="h-3 w-3" />
@@ -400,6 +414,16 @@ const VariantManager = ({ productId }: VariantManagerProps) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && galleryImages.length > 0 && (
+        <GalleryLightbox
+          items={galleryImages.map(img => ({ src: img.image_url, title: galleryVariant?.variant_label_en || 'Variant' }))}
+          currentIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
     </div>
   );
 };
