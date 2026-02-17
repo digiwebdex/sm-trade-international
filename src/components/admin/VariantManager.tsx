@@ -237,7 +237,7 @@ const VariantManager = ({ productId }: VariantManagerProps) => {
             >
               <div className="shrink-0 w-10 h-10 rounded-md overflow-hidden bg-muted border border-border/30">
                 {v.image_url ? (
-                  <img src={v.image_url} alt="" className="w-full h-full object-cover" />
+                  <img src={v.image_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <ImageIcon className="h-4 w-4 text-muted-foreground/40" />
@@ -377,6 +377,8 @@ const VariantManager = ({ productId }: VariantManagerProps) => {
                       src={img.image_url}
                       alt=""
                       className="w-full h-full object-cover cursor-pointer"
+                      loading="lazy"
+                      decoding="async"
                       onClick={() => setLightboxIndex(idx)}
                     />
                     <button

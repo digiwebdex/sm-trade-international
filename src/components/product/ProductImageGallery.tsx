@@ -3,6 +3,16 @@ import { ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
 import OptimizedImage from '@/components/OptimizedImage';
 import { cn } from '@/lib/utils';
 
+/** Build a small optimized thumbnail URL for Supabase images */
+function thumbUrl(src: string, width = 160): string {
+  if (!src.includes('supabase.co/storage')) return src;
+  const url = new URL(src);
+  url.searchParams.set('width', String(width));
+  url.searchParams.set('quality', '70');
+  url.searchParams.set('format', 'webp');
+  return url.toString();
+}
+
 interface VariantThumb {
   id: string;
   image_url: string | null;
@@ -200,10 +210,13 @@ const ProductImageGallery = ({
               title={img.label}
             >
               <img
-                src={img.url}
+                src={thumbUrl(img.url)}
                 alt={img.label || `${title} view ${idx + 1}`}
                 className="w-full h-full object-cover"
                 loading="lazy"
+                decoding="async"
+                width={64}
+                height={64}
               />
               {/* Color dot indicator */}
               {img.colorHex && (
