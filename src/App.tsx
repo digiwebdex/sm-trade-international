@@ -35,6 +35,7 @@ const AdminImport = lazy(() => import("./pages/admin/AdminImport"));
 const AdminHomeSections = lazy(() => import("./pages/admin/AdminHomeSections"));
 const AdminServices = lazy(() => import("./pages/admin/AdminServices"));
 const AdminProcess = lazy(() => import("./pages/admin/AdminProcess"));
+const AdminHeroSlides = lazy(() => import("./pages/admin/AdminHeroSlides"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -108,6 +109,7 @@ const App = () => (
                 <Route path="home-sections" element={<Suspense fallback={<AdminFallback />}><AdminHomeSections /></Suspense>} />
                 <Route path="services" element={<Suspense fallback={<AdminFallback />}><AdminServices /></Suspense>} />
                 <Route path="process" element={<Suspense fallback={<AdminFallback />}><AdminProcess /></Suspense>} />
+                <Route path="hero-slides" element={<Suspense fallback={<AdminFallback />}><AdminHeroSlides /></Suspense>} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
