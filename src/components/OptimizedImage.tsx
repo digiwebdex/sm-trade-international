@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, ImgHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'srcSet'> {
   /** The image source URL */
@@ -126,12 +127,12 @@ const OptimizedImage = ({
           />
         </picture>
       )}
-      {/* Placeholder while not loaded */}
+      {/* Skeleton placeholder while not loaded */}
       {!loaded && blurPlaceholder && (
-        <div
+        <Skeleton
           className={cn(
-            'absolute inset-0 bg-muted animate-pulse',
-            loaded && 'opacity-0'
+            'absolute inset-0 rounded-none',
+            loaded && 'opacity-0 transition-opacity duration-300'
           )}
         />
       )}
