@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, GripVertical, Image as ImageIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, Image as ImageIcon, Eye, EyeOff, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 type HeroSlide = {
@@ -31,12 +31,101 @@ const emptySlide: Omit<HeroSlide, 'id'> = {
   is_active: true,
 };
 
+/* ── Live Preview Component ──────────────────────────────── */
+const HeroPreview = ({ slides }: { slides: HeroSlide[] }) => {
+  const activeSlides = slides.filter(s => s.is_active);
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    if (activeSlides.length === 0) return;
+    setCurrent(c => (c >= activeSlides.length ? 0 : c));
+  }, [activeSlides.length]);
+
+  useEffect(() => {
+    if (activeSlides.length <= 1) return;
+    const t = setInterval(() => setCurrent(c => (c + 1) % activeSlides.length), 4000);
+    return () => clearInterval(t);
+  }, [activeSlides.length]);
+
+  if (activeSlides.length === 0) {
+    return (
+      <div className="rounded-xl border border-border bg-muted/50 flex items-center justify-center h-64 text-muted-foreground text-sm">
+        No active slides to preview
+      </div>
+    );
+  }
+
+  const slide = activeSlides[current];
+
+  return (
+    <div className="rounded-xl border border-border overflow-hidden bg-foreground relative" style={{ aspectRatio: '16/7' }}>
+      {/* Background image */}
+      {slide.image_url && (
+        <img src={slide.image_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-br from-foreground/80 via-foreground/60 to-primary/20" />
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col justify-center h-full p-6 md:p-8 max-w-[60%]">
+        <h3 className="text-white font-bold text-lg md:text-2xl leading-tight mb-2" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+          {slide.title || 'Slide Title'}
+        </h3>
+        <p className="text-white/60 text-xs md:text-sm mb-4 line-clamp-2">
+          {slide.subtitle || 'Slide subtitle goes here'}
+        </p>
+        {slide.cta_text && (
+          <div>
+            <span className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-4 py-2 rounded-lg">
+              {slide.cta_text}
+              <ArrowRight className="w-3 h-3" />
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Navigation */}
+      {activeSlides.length > 1 && (
+        <>
+          <button
+            onClick={() => setCurrent(c => (c - 1 + activeSlides.length) % activeSlides.length)}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-all z-20"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setCurrent(c => (c + 1) % activeSlides.length)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-all z-20"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+            {activeSlides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                className={`rounded-full transition-all ${i === current ? 'w-5 h-1.5 bg-accent' : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/50'}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Slide counter */}
+      <div className="absolute top-3 right-3 text-[10px] text-white/40 bg-black/30 backdrop-blur-sm rounded px-2 py-0.5 z-20">
+        {current + 1} / {activeSlides.length}
+      </div>
+    </div>
+  );
+};
+
+/* ── Main Admin Page ─────────────────────────────────────── */
 const AdminHeroSlides = () => {
   const qc = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<HeroSlide | null>(null);
   const [form, setForm] = useState(emptySlide);
   const [uploading, setUploading] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(true);
 
   const { data: slides = [], isLoading } = useQuery({
     queryKey: ['hero_slides'],
@@ -136,66 +225,84 @@ const AdminHeroSlides = () => {
           <h2 className="text-xl font-bold">Hero Slides</h2>
           <p className="text-sm text-muted-foreground">Manage homepage carousel slides</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Slide</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{editing ? 'Edit Slide' : 'New Slide'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label>Title</Label>
-                <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required />
-              </div>
-              <div>
-                <Label>Subtitle</Label>
-                <Input value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} />
-              </div>
-              <div>
-                <Label>Image</Label>
-                <div className="flex items-center gap-3">
-                  {form.image_url ? (
-                    <img src={form.image_url} alt="" className="w-20 h-14 object-cover rounded border" />
-                  ) : (
-                    <div className="w-20 h-14 bg-muted rounded border flex items-center justify-center">
-                      <ImageIcon className="w-5 h-5 text-muted-foreground" />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPreviewOpen(p => !p)}>
+            {previewOpen ? <EyeOff className="w-4 h-4 mr-1.5" /> : <Eye className="w-4 h-4 mr-1.5" />}
+            {previewOpen ? 'Hide Preview' : 'Show Preview'}
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Slide</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>{editing ? 'Edit Slide' : 'New Slide'}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label>Title</Label>
+                  <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required />
+                </div>
+                <div>
+                  <Label>Subtitle</Label>
+                  <Input value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Image</Label>
+                  <div className="flex items-center gap-3">
+                    {form.image_url ? (
+                      <img src={form.image_url} alt="" className="w-20 h-14 object-cover rounded border" />
+                    ) : (
+                      <div className="w-20 h-14 bg-muted rounded border flex items-center justify-center">
+                        <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
                     </div>
-                  )}
-                  <div className="flex-1">
-                    <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
+                  </div>
+                  <Input className="mt-2" placeholder="Or paste image URL" value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>CTA Text</Label>
+                    <Input value={form.cta_text} onChange={e => setForm(f => ({ ...f, cta_text: e.target.value }))} />
+                  </div>
+                  <div>
+                    <Label>CTA Link</Label>
+                    <Input value={form.cta_link} onChange={e => setForm(f => ({ ...f, cta_link: e.target.value }))} />
                   </div>
                 </div>
-                <Input className="mt-2" placeholder="Or paste image URL" value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>CTA Text</Label>
-                  <Input value={form.cta_text} onChange={e => setForm(f => ({ ...f, cta_text: e.target.value }))} />
+                  <Label>Sort Order</Label>
+                  <Input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: parseInt(e.target.value) || 0 }))} />
                 </div>
-                <div>
-                  <Label>CTA Link</Label>
-                  <Input value={form.cta_link} onChange={e => setForm(f => ({ ...f, cta_link: e.target.value }))} />
+                <div className="flex items-center gap-2">
+                  <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />
+                  <Label>Active</Label>
                 </div>
-              </div>
-              <div>
-                <Label>Sort Order</Label>
-                <Input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: parseInt(e.target.value) || 0 }))} />
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />
-                <Label>Active</Label>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={closeDialog}>Cancel</Button>
-                <Button type="submit" disabled={upsert.isPending}>{editing ? 'Update' : 'Create'}</Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={closeDialog}>Cancel</Button>
+                  <Button type="submit" disabled={upsert.isPending}>{editing ? 'Update' : 'Create'}</Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
+      {/* Live Preview */}
+      {previewOpen && !isLoading && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Eye className="w-4 h-4 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Live Preview</span>
+          </div>
+          <HeroPreview slides={slides} />
+        </div>
+      )}
+
+      {/* Slides List */}
       {isLoading ? (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin" />
