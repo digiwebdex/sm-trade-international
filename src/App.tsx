@@ -17,6 +17,7 @@ const Catalog = lazy(() => import("./pages/Catalog"));
 const GalleryPage = lazy(() => import("./pages/Gallery"));
 const GiftConfigurator = lazy(() => import("./pages/GiftConfigurator"));
 const ARProductPreview = lazy(() => import("./pages/ARProductPreview"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 
 // Lazy-load admin routes – they're never needed on the public site
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
@@ -67,6 +68,9 @@ const App = () => (
                 } />
                 <Route path="/3d-preview" element={
                   <Suspense fallback={<AdminFallback />}><ARProductPreview /></Suspense>
+                } />
+                <Route path="/product/:id" element={
+                  <Suspense fallback={<AdminFallback />}><ProductDetail /></Suspense>
                 } />
               </Route>
               <Route path="/admin/login" element={

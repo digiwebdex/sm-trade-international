@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -56,6 +57,7 @@ const staticProducts: StaticProduct[] = [
 ];
 
 type DisplayProduct = {
+  dbId?: string;
   src: string;
   title: string;
   titleEn: string;
@@ -70,6 +72,7 @@ type DisplayProduct = {
 
 const ProductsSection = () => {
   const { t, lang } = useLanguage();
+  const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [showAll, setShowAll] = useState(false);
@@ -110,6 +113,7 @@ const ProductsSection = () => {
       return dbProducts.map(p => {
         const cat = (p as any).categories;
         return {
+          dbId: p.id,
           src: p.image_url || '',
           title: lang === 'en' ? p.name_en : (p.name_bn || p.name_en),
           titleEn: p.name_en,
@@ -264,7 +268,7 @@ const ProductsSection = () => {
               <div
                 key={i}
                 className="group cursor-pointer overflow-hidden rounded-2xl bg-background shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative border border-border/30 flex flex-col"
-                onClick={() => setLightbox(p)}
+                onClick={() => p.dbId ? navigate(`/product/${p.dbId}`) : setLightbox(p)}
               >
                 {!p.isActive && (
                   <span className="absolute top-3 left-3 z-10 bg-muted text-muted-foreground text-[10px] px-2 py-0.5 rounded-full">
