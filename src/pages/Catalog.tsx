@@ -1,6 +1,7 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, X, MessageCircle, ShoppingBag, Check } from 'lucide-react';
 import { useQuoteBasket } from '@/contexts/QuoteBasketContext';
@@ -61,12 +62,21 @@ const Catalog = () => {
   const { get } = useSiteSettings();
   const { addItem, items: basketItems, setIsOpen: openBasket } = useQuoteBasket();
   const whatsappNumber = (get('contact', 'whatsapp_number', '8801867666888') as string).replace(/[^0-9]/g, '') || '8801867666888';
+  const [searchParams] = useSearchParams();
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Product | null>(null);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [justAdded, setJustAdded] = useState<string | null>(null);
+
+  // Pre-fill search and category from URL query params (from navbar search)
+  useEffect(() => {
+    const q = searchParams.get('q');
+    const cat = searchParams.get('category');
+    if (q) setSearch(q);
+    if (cat) setFilter(cat);
+  }, [searchParams]);
 
   const handleAddToQuote = useCallback((p: Product, e?: React.MouseEvent) => {
     e?.stopPropagation();
