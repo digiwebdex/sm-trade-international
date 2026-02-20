@@ -9,14 +9,134 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Upload, Image as ImageIcon, PackagePlus, Search, ChevronLeft, ChevronRight, X, CheckSquare, Square } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, Image as ImageIcon, PackagePlus, Search, ChevronLeft, ChevronRight, X, CheckSquare, Square, Loader2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import BulkUploadZone, { type FileItem } from '@/components/admin/BulkUploadZone';
 import VariantManager from '@/components/admin/VariantManager';
 import ProductImageManager from '@/components/admin/ProductImageManager';
+import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 12;
+
+// ── Inline 5-view image uploader (works before product is saved) ──────────────
+type ViewType = 'main' | 'front' | 'back' | 'left' | 'right';
+const VIEW_SLOTS: { type: ViewType; label: string }[] = [
+  { type: 'main',  label: 'Main'  },
+  { type: 'front', label: 'Front' },
+  { type: 'back',  label: 'Back'  },
+  { type: 'left',  label: 'Left'  },
+  { type: 'right', label: 'Right' },
+];
+
+interface StagedImage { file?: File; url: string; uploading?: boolean; }
+type StagedViews = Partial<Record<ViewType, StagedImage>>;
+
+interface InlineViewUploaderProps {
+  staged: StagedViews;
+  onStaged: (v: StagedViews) => void;
+}
+
+const InlineViewUploader = ({ staged, onStaged }: InlineViewUploaderProps) => {
+  const { toast } = useToast();
+
+  const handleFile = async (file: File, viewType: ViewType) => {
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Max 2MB per image.', variant: 'destructive' });
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid type', description: 'Images only.', variant: 'destructive' });
+      return;
+    }
+    // Set uploading state
+    onStaged({ ...staged, [viewType]: { url: '', uploading: true } });
+
+    const ext = file.name.split('.').pop();
+    const path = `product-views/staged/${viewType}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('products').upload(path, file);
+    if (error) {
+      toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
+      const next = { ...staged };
+      delete next[viewType];
+      onStaged(next);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from('products').getPublicUrl(path);
+    onStaged({ ...staged, [viewType]: { file, url: urlData.publicUrl } });
+  };
+
+  const remove = (viewType: ViewType) => {
+    const next = { ...staged };
+    delete next[viewType];
+    onStaged(next);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Additional Product Images
+        </p>
+        <span className="text-[10px] text-muted-foreground/60">(Main required · others optional · max 2MB)</span>
+      </div>
+      <div className="grid grid-cols-5 gap-2">
+        {VIEW_SLOTS.map(({ type, label }) => {
+          const img = staged[type];
+          const isRequired = type === 'main';
+
+          return (
+            <div key={type} className="flex flex-col gap-1">
+              <div className={cn(
+                'relative aspect-square rounded-xl overflow-hidden border-2 border-dashed transition-all group',
+                img?.url
+                  ? 'border-[hsl(var(--sm-gold))]/60 shadow-sm'
+                  : isRequired
+                    ? 'border-destructive/40 bg-destructive/5 hover:border-destructive/70'
+                    : 'border-border/40 bg-muted/20 hover:border-border/70',
+              )}>
+                {img?.uploading ? (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : img?.url ? (
+                  <>
+                    <img src={img.url} alt={label} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                      <label className="cursor-pointer p-1.5 bg-white/90 rounded-full hover:bg-white transition-colors" title="Replace">
+                        <Upload className="h-3 w-3 text-foreground" />
+                        <input type="file" accept="image/*" className="hidden"
+                          onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0], type); }} />
+                      </label>
+                      <button type="button" onClick={() => remove(type)}
+                        className="p-1.5 bg-destructive/90 rounded-full hover:bg-destructive transition-colors" title="Remove">
+                        <X className="h-3 w-3 text-destructive-foreground" />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <label className="cursor-pointer w-full h-full flex flex-col items-center justify-center gap-1.5 hover:bg-muted/40 transition-colors">
+                    <Upload className="h-4 w-4 text-muted-foreground/50" />
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0], type); }} />
+                  </label>
+                )}
+                {isRequired && !img?.url && !img?.uploading && (
+                  <span className="absolute bottom-1 left-0 right-0 text-center text-[8px] text-destructive/70 font-bold">required</span>
+                )}
+              </div>
+              <p className={cn(
+                'text-[10px] text-center font-semibold uppercase tracking-wider',
+                img?.url ? 'text-[hsl(var(--sm-gold))]' : 'text-muted-foreground',
+              )}>{label}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface ProductForm {
   name_en: string;
@@ -48,6 +168,7 @@ const AdminProducts = () => {
   const [savedProductId, setSavedProductId] = useState<string | null>(null); // ID after first save (add mode)
   const [form, setForm] = useState<ProductForm>(emptyForm);
   const [uploading, setUploading] = useState(false);
+  const [stagedViews, setStagedViews] = useState<StagedViews>({}); // inline 5-view images before product save
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Delete confirmation
@@ -145,16 +266,36 @@ const AdminProducts = () => {
           .select('id')
           .single();
         if (error) throw error;
-        return data?.id ?? null;
+        const newId = data?.id ?? null;
+
+        // Persist staged view images to product_images table
+        if (newId) {
+          const entries = VIEW_SLOTS
+            .map((slot, idx) => ({ slot, idx }))
+            .filter(({ slot }) => stagedViews[slot.type]?.url);
+
+          if (entries.length > 0) {
+            const rows = entries.map(({ slot, idx }) => ({
+              product_id: newId,
+              variant_id: null,
+              image_url: stagedViews[slot.type]!.url,
+              image_type: slot.type,
+              sort_order: idx,
+            }));
+            await supabase.from('product_images').insert(rows as any);
+          }
+        }
+
+        return newId;
       }
     },
     onSuccess: (newId) => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
       if (newId) {
-        // Stay in dialog to allow image uploads, update editId to new product
         setEditId(newId);
         setSavedProductId(newId);
-        toast({ title: 'Product created — now add images below' });
+        setStagedViews({});
+        toast({ title: 'Product created successfully!' });
       } else {
         toast({ title: 'Product updated' });
         closeDialog();
@@ -216,7 +357,7 @@ const AdminProducts = () => {
     setDialogOpen(true);
   };
 
-  const closeDialog = () => { setDialogOpen(false); setEditId(null); setSavedProductId(null); setForm(emptyForm); };
+  const closeDialog = () => { setDialogOpen(false); setEditId(null); setSavedProductId(null); setForm(emptyForm); setStagedViews({}); };
 
   const handleBulkImport = useCallback(async () => {
     const pending = bulkFiles.filter(f => f.status === 'pending');
@@ -354,7 +495,7 @@ const AdminProducts = () => {
                 <Plus className="h-4 w-4 mr-2" /> Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editId ? 'Edit Product' : 'Add Product'}</DialogTitle>
               </DialogHeader>
@@ -428,6 +569,13 @@ const AdminProducts = () => {
                     </Button>
                   )}
                 </div>
+                {/* 5-view image uploader — always visible in form */}
+                {!editId && (
+                  <div className="border border-border/50 rounded-xl p-3 bg-muted/20">
+                    <InlineViewUploader staged={stagedViews} onStaged={setStagedViews} />
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2">
                   <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />
                   <label className="text-sm">Active (visible on site)</label>
@@ -440,14 +588,14 @@ const AdminProducts = () => {
                     </Button>
                   ) : (
                     <Button type="submit" className="bg-sm-red hover:bg-[hsl(var(--sm-red-dark))] text-white" disabled={saveMutation.isPending}>
-                      {saveMutation.isPending ? 'Saving...' : 'Save'}
+                      {saveMutation.isPending ? 'Saving...' : editId ? 'Update' : 'Save Product'}
                     </Button>
                   )}
                 </div>
               </form>
 
-              {/* Multi-view image uploader — shown after product is saved (add) or always in edit */}
-              {(editId) && (
+              {/* Multi-view image manager — edit mode only (or after new product saved) */}
+              {editId && (
                 <div className="border-t border-border pt-4 mt-2">
                   <ProductImageManager productId={editId} />
                 </div>
