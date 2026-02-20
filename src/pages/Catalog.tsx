@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -66,21 +66,39 @@ const Catalog = () => {
   const { get } = useSiteSettings();
   const { addItem, items: basketItems, setIsOpen: openBasket } = useQuoteBasket();
   const whatsappNumber = (get('contact', 'whatsapp_number', '8801867666888') as string).replace(/[^0-9]/g, '') || '8801867666888';
-  const [searchParams] = useSearchParams();
-  const [filter, setFilter] = useState('all');
-  const [search, setSearch] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selected, setSelected] = useState<Product | null>(null);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [justAdded, setJustAdded] = useState<string | null>(null);
 
-  // Pre-fill search and category from URL query params (from navbar search)
-  useEffect(() => {
-    const q = searchParams.get('q');
-    const cat = searchParams.get('category');
-    if (q) setSearch(q);
-    if (cat) setFilter(cat);
-  }, [searchParams]);
+  // Derive filter and search directly from URL params (source of truth)
+  const filter = searchParams.get('category') || 'all';
+  const search = searchParams.get('q') || '';
+
+  const setFilter = useCallback((cat: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (cat === 'all') {
+        next.delete('category');
+      } else {
+        next.set('category', cat);
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const setSearch = useCallback((q: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (!q) {
+        next.delete('q');
+      } else {
+        next.set('q', q);
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   const handleAddToQuote = useCallback((p: Product, e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -183,10 +201,9 @@ const Catalog = () => {
   }, []);
 
   const resetFilters = useCallback(() => {
-    setFilter('all');
+    setSearchParams({}, { replace: true });
     setSelectedFeatures([]);
-    setSearch('');
-  }, []);
+  }, [setSearchParams]);
 
   const filtered = useMemo(() => {
     let result = products;
