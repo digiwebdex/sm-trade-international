@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, Search, ChevronDown, Tag } from 'lucide-react';
+import { Menu, X, Search, ChevronDown, Tag, LogIn } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePrefetchHome } from '@/hooks/usePrefetchHome';
@@ -129,15 +129,15 @@ const Navbar = () => {
         <a href={resolveHref('#home')} className="flex items-center gap-2.5 group flex-shrink-0">
           <img src={logo} alt="S. M. Trade International" className="h-10 w-10 rounded object-cover" />
           <div className="w-px h-8 bg-[hsl(var(--sm-gold))]/40 hidden sm:block" />
-          <span className="hidden sm:block font-bold text-sm leading-tight" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            S. M. Trade<br />International
+          <span className="hidden sm:block font-bold text-sm leading-tight whitespace-nowrap" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            S. M. Trade International
           </span>
         </a>
 
-        {/* Search bar — desktop */}
+        {/* Search bar — desktop (fixed width, not full flex-1) */}
         <form
           onSubmit={handleSearch}
-          className="hidden md:flex flex-1 items-stretch h-10 rounded-md border-2 border-[hsl(var(--sm-gold))] shadow-sm overflow-visible"
+          className="hidden md:flex w-80 lg:w-96 items-stretch h-10 rounded-md border-2 border-[hsl(var(--sm-gold))] shadow-sm overflow-visible"
         >
           {/* Category selector */}
           <div className="relative flex-shrink-0" ref={searchCatRef}>
@@ -189,6 +189,15 @@ const Navbar = () => {
             <Search className="h-4 w-4 text-white" />
           </button>
         </form>
+
+        {/* Admin sign-in (desktop) */}
+        <Link
+          to="/admin"
+          className="hidden md:flex items-center gap-1.5 ml-auto flex-shrink-0 text-xs font-medium text-foreground/60 hover:text-foreground border border-border/60 hover:border-[hsl(var(--sm-gold))]/60 px-3 py-1.5 rounded-md transition-all duration-200 whitespace-nowrap"
+        >
+          <LogIn className="h-3.5 w-3.5" />
+          <span>Admin</span>
+        </Link>
 
         {/* Mobile menu toggle */}
         <button className="md:hidden ml-auto p-1" onClick={() => setMobileOpen(!mobileOpen)}>
