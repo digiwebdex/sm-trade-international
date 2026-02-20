@@ -126,18 +126,18 @@ const Navbar = () => {
       <div className="container mx-auto px-4 flex items-center gap-4 h-16">
 
         {/* Logo + Brand name */}
-        <a href={resolveHref('#home')} className="flex items-center gap-2.5 group flex-shrink-0">
+        <a href={resolveHref('#home')} className="flex items-center gap-3 group flex-shrink-0">
           <img src={logo} alt="S. M. Trade International" className="h-10 w-10 rounded object-cover" />
           <div className="w-px h-8 bg-[hsl(var(--sm-gold))]/40 hidden sm:block" />
-          <span className="hidden sm:block font-bold text-sm leading-tight whitespace-nowrap" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+          <span className="hidden sm:block font-bold text-base leading-tight whitespace-nowrap" style={{ fontFamily: 'Montserrat, sans-serif' }}>
             S. M. Trade International
           </span>
         </a>
 
-        {/* Search bar — desktop (fixed width, compact) */}
+        {/* Search bar — desktop (flex-1 to fill available space) */}
         <form
           onSubmit={handleSearch}
-          className="hidden md:flex w-64 lg:w-80 items-stretch h-9 rounded-md border-2 border-[hsl(var(--sm-gold))] shadow-sm overflow-visible ml-4"
+          className="hidden md:flex flex-1 items-stretch h-9 rounded-md border-2 border-[hsl(var(--sm-gold))] shadow-sm overflow-visible ml-6 mr-6"
         >
           {/* Category selector */}
           <div className="relative flex-shrink-0" ref={searchCatRef}>
