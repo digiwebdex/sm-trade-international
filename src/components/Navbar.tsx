@@ -106,7 +106,7 @@ const Navbar = () => {
 
   const links = [
     { key: 'nav.home', href: '#home' },
-    { key: 'nav.about', href: '#about' },
+    { key: 'nav.about', href: '/about', isRoute: true },
     { key: 'nav.services', href: '#services' },
     { key: 'nav.products', href: '#products' },
     { key: 'nav.gallery', href: '/gallery', isRoute: true },

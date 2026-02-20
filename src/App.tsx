@@ -13,6 +13,7 @@ import PublicLayout from "./components/PublicLayout";
 import NotFound from "./pages/NotFound";
 
 const Portfolio = lazy(() => import("./pages/Portfolio"));
+const About = lazy(() => import("./pages/About"));
 const Catalog = lazy(() => import("./pages/Catalog"));
 const GalleryPage = lazy(() => import("./pages/Gallery"));
 const GiftConfigurator = lazy(() => import("./pages/GiftConfigurator"));
@@ -77,6 +78,9 @@ const App = () => (
                 } />
                 <Route path="/portfolio" element={
                   <Suspense fallback={<AdminFallback />}><Portfolio /></Suspense>
+                } />
+                <Route path="/about" element={
+                  <Suspense fallback={<AdminFallback />}><About /></Suspense>
                 } />
                 <Route path="/gallery" element={
                   <Suspense fallback={<AdminFallback />}><GalleryPage /></Suspense>

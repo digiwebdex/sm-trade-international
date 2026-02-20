@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import logo from '@/assets/logo.jpeg';
@@ -63,14 +64,30 @@ const Footer = () => {
               <div className="w-1.5 h-1.5 rotate-45 bg-[hsl(var(--sm-gold))]/50" />
             </div>
             <div className="space-y-3">
-              {['nav.home', 'nav.about', 'nav.services', 'nav.products', 'nav.contact'].map(k => (
-                <a
-                  key={k}
-                  href={`#${k.split('.')[1]}`}
-                  className="block text-primary-foreground/50 hover:text-[hsl(var(--sm-gold))] text-sm transition-colors duration-300 hover:translate-x-1 transform"
-                >
-                  {t(k)}
-                </a>
+              {[
+                { key: 'nav.home', href: '/#home' },
+                { key: 'nav.about', href: '/about', isRoute: true },
+                { key: 'nav.services', href: '/#services' },
+                { key: 'nav.products', href: '/#products' },
+                { key: 'nav.contact', href: '/#contact' },
+              ].map(item => (
+                item.isRoute ? (
+                  <Link
+                    key={item.key}
+                    to={item.href}
+                    className="block text-primary-foreground/50 hover:text-[hsl(var(--sm-gold))] text-sm transition-colors duration-300 hover:translate-x-1 transform"
+                  >
+                    {t(item.key)}
+                  </Link>
+                ) : (
+                  <a
+                    key={item.key}
+                    href={item.href}
+                    className="block text-primary-foreground/50 hover:text-[hsl(var(--sm-gold))] text-sm transition-colors duration-300 hover:translate-x-1 transform"
+                  >
+                    {t(item.key)}
+                  </a>
+                )
               ))}
             </div>
           </div>
