@@ -194,40 +194,98 @@ const ProductImageGallery = ({
         )}
       </div>
 
-      {/* Thumbnail strip */}
-      {images.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin snap-x">
-          {images.map((img, idx) => (
-            <button
-              key={`${img.url}-${idx}`}
-              onClick={() => selectIndex(idx)}
-              className={cn(
-                'shrink-0 snap-start relative w-[72px] h-[72px] rounded-xl overflow-hidden border-2 transition-all duration-200',
-                safeIdx === idx
-                  ? 'border-[hsl(var(--sm-gold))] ring-2 ring-[hsl(var(--sm-gold))]/30 scale-105 shadow-md'
-                  : 'border-border/30 hover:border-border hover:scale-[1.03]',
-              )}
-              title={img.image_type ? TYPE_LABELS[img.image_type] : img.label}
-            >
-              <img
-                src={thumbUrl(img.url)}
-                alt={img.label || `${title} view ${idx + 1}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
-                width={72}
-                height={72}
-              />
-              {/* Image type label */}
-              {img.image_type && (
-                <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[8px] font-bold uppercase tracking-wide text-center leading-4">
-                  {TYPE_LABELS[img.image_type] || img.image_type}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* 5-View slot strip — always show Main/Front/Back/Left/Right */}
+      {(() => {
+        const VIEW_SLOTS: ImageType[] = ['main', 'front', 'back', 'left', 'right'];
+        const hasAnyView = images.some(img => VIEW_SLOTS.includes(img.image_type as ImageType));
+        const slots = hasAnyView ? VIEW_SLOTS : null;
+
+        if (!slots && images.length <= 1) return null;
+
+        if (slots) {
+          return (
+            <div className="flex gap-2 justify-between">
+              {VIEW_SLOTS.map(viewType => {
+                const imgIdx = images.findIndex(img => img.image_type === viewType);
+                const img = imgIdx >= 0 ? images[imgIdx] : null;
+                const isActive = safeIdx === imgIdx && imgIdx >= 0;
+
+                return (
+                  <button
+                    key={viewType}
+                    onClick={() => img ? selectIndex(imgIdx) : undefined}
+                    disabled={!img}
+                    className={cn(
+                      'flex-1 flex flex-col items-center gap-1 group',
+                      !img && 'opacity-40 cursor-default'
+                    )}
+                    title={TYPE_LABELS[viewType]}
+                  >
+                    <div className={cn(
+                      'w-full aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200 bg-muted/40 flex items-center justify-center',
+                      isActive
+                        ? 'border-[hsl(var(--sm-gold))] ring-2 ring-[hsl(var(--sm-gold))]/30 shadow-md'
+                        : img
+                          ? 'border-border/30 hover:border-border hover:shadow-sm'
+                          : 'border-dashed border-border/30',
+                    )}>
+                      {img ? (
+                        <img
+                          src={thumbUrl(img.url)}
+                          alt={TYPE_LABELS[viewType]}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <svg className="h-5 w-5 text-muted-foreground/30" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                          <rect x="3" y="3" width="18" height="18" rx="3" />
+                          <path d="M3 9l4-4 4 4 4-4 4 4" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className={cn(
+                      'text-[10px] font-semibold uppercase tracking-wider transition-colors',
+                      isActive ? 'text-[hsl(var(--sm-gold))]' : 'text-muted-foreground',
+                    )}>
+                      {TYPE_LABELS[viewType]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        }
+
+        // Fallback: generic thumbnail strip for non-typed images
+        return (
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin snap-x">
+            {images.map((img, idx) => (
+              <button
+                key={`${img.url}-${idx}`}
+                onClick={() => selectIndex(idx)}
+                className={cn(
+                  'shrink-0 snap-start relative w-[72px] h-[72px] rounded-xl overflow-hidden border-2 transition-all duration-200',
+                  safeIdx === idx
+                    ? 'border-[hsl(var(--sm-gold))] ring-2 ring-[hsl(var(--sm-gold))]/30 scale-105 shadow-md'
+                    : 'border-border/30 hover:border-border hover:scale-[1.03]',
+                )}
+                title={img.image_type ? TYPE_LABELS[img.image_type as ImageType] : img.label}
+              >
+                <img
+                  src={thumbUrl(img.url)}
+                  alt={img.label || `${title} view ${idx + 1}`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  width={72}
+                  height={72}
+                />
+              </button>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 };
