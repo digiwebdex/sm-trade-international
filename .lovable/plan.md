@@ -1,45 +1,38 @@
 
 
-# 3D Cube Product Carousel for Hero Section
+# Navbar Cleanup and Layout Adjustments
 
-Replace the current flat horizontal carousel on the right side of the hero with an interactive 3D cube-style carousel that rotates to display products on its faces.
+Three changes to the public navigation bar in `src/components/Navbar.tsx`:
 
 ---
 
-## What Changes
+## 1. Remove "Admin" Login Link from Navbar
 
-The right column of the hero section currently shows a flat scrolling strip of product cards. This will be replaced with a **CSS 3D cube carousel** where:
+The "Admin" link with the LogIn icon on the right side of Row 1 (desktop) will be removed entirely. The admin panel remains accessible by navigating directly to `/admin/login` -- it just won't be advertised in the public navbar. The mobile menu admin link (if any) will also be removed.
 
-- A central card faces the viewer head-on (large, bright, fully visible)
-- Side cards are rotated in 3D perspective, creating a cube-like depth effect
-- The cube auto-rotates through products with smooth 3D transitions
-- Navigation controls (prev/next, dots, pause/play) remain functional
-- Hover pauses rotation, just like today
+## 2. Make the Search Box Smaller but Flexible
 
-## Visual Effect
+Currently the search bar uses `flex-1` and fills all available space between the logo and the (soon-removed) Admin link. It will be updated to:
+- Use `max-w-md` (max 28rem / ~448px) instead of unlimited flex growth
+- Keep `flex-1` so it still adapts to available space on smaller screens
+- Center it visually in the remaining space using `mx-auto`
 
-The carousel will use CSS `perspective` and `rotateY` transforms to create a 3D cube illusion:
-- **Center card**: scale 1.0, rotateY(0), full opacity, white background with soft shadow
-- **Left card**: rotateY(-45deg), translateX left, slightly smaller, reduced opacity
-- **Right card**: rotateY(45deg), translateX right, slightly smaller, reduced opacity
-- **Hidden cards**: further rotated and fully transparent
+This gives a compact, Google-style search bar that doesn't stretch across the entire row.
 
-A subtle reflection/glow effect remains beneath the cube.
+## 3. Right-Align Row 2 Navigation Links
+
+The second row (nav links + Categories dropdown) currently sits left-aligned. It will be changed to `justify-end` so all menu items align to the right side of the container, matching common e-commerce navbar patterns.
 
 ---
 
 ## Technical Details
 
-### File modified:
-- **src/components/HeroSection.tsx** -- Replace the infinite strip carousel with a CSS 3D perspective carousel
+**File:** `src/components/Navbar.tsx`
 
-### Implementation approach:
-1. Wrap the carousel area in a container with `perspective: 1200px`
-2. Show 3 visible cards at a time (left, center, right) using CSS `transform: rotateY() translateZ()`
-3. Use the existing `current` state and auto-advance timer (no logic changes needed)
-4. Each card gets a computed `rotateY` and `translateX` based on its offset from the active index
-5. Cards beyond offset +/-1 get `opacity: 0` and `pointer-events: none`
-6. Keep all existing product images, labels, navigation controls, and pause/play functionality
+Changes:
+- **Lines 193-200**: Delete the Admin `<Link>` block entirely. Remove the `LogIn` icon from the import on line 2.
+- **Lines 138-141**: Update the search `<form>` classes -- add `max-w-md mx-auto` to constrain width while keeping it centered and flexible.
+- **Line 211**: Change the Row 2 flex container from `flex items-center gap-0` to `flex items-center gap-0 justify-end` to push nav links to the right.
 
-### No new dependencies needed -- pure CSS 3D transforms with React state management already in place.
+No other files need changes. The `/admin/login` route and all admin functionality remain fully intact -- only the visible link in the public navbar is removed.
 
