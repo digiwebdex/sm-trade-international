@@ -150,7 +150,7 @@ const ProductImageGallery = ({
                   <img
                     src={thumbUrl(img.url)}
                     alt={TYPE_LABELS[viewType]}
-                    className="w-full h-full object-contain p-0.5"
+                    className="w-full h-full object-cover"
                     loading="lazy"
                   />
                 </button>
@@ -172,7 +172,7 @@ const ProductImageGallery = ({
                 <img
                   src={thumbUrl(img.url)}
                   alt={img.label || `View ${idx + 1}`}
-                  className="w-full h-full object-contain p-0.5"
+                    className="w-full h-full object-cover"
                   loading="lazy"
                 />
               </button>
@@ -197,7 +197,7 @@ const ProductImageGallery = ({
                 src={current.url}
                 alt={current.label || title}
                 className={cn(
-                  'w-full h-full object-contain p-4 transition-all duration-300',
+                  'w-full h-full object-cover transition-all duration-300',
                   isZoomed ? 'scale-[2.2]' : 'scale-100',
                   fade ? 'opacity-100' : 'opacity-0',
                 )}
@@ -253,7 +253,7 @@ const ProductImageGallery = ({
                 <img
                   src={thumbUrl(img.url)}
                   alt={`View ${idx + 1}`}
-                  className="w-full h-full object-contain p-0.5"
+                  className="w-full h-full object-cover"
                   loading="lazy"
                 />
               </button>

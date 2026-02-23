@@ -590,7 +590,7 @@ const ProductDetail = () => {
                         <OptimizedImage
                           src={rp.image_url}
                           alt={rpTitle}
-                          className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                           wrapperClassName="w-full h-full"
                           sizes="(min-width: 768px) 25vw, 50vw"
                         />
