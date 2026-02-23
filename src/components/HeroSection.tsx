@@ -76,6 +76,7 @@ const HeroSection = () => {
       return data;
     },
     staleTime: 5 * 60 * 1000,
+    initialData: [],
     placeholderData: (prev: any) => prev,
   });
 
