@@ -132,33 +132,27 @@ const ProductImageGallery = ({
             VIEW_SLOTS.map(viewType => {
               const imgIdx = images.findIndex(img => img.image_type === viewType);
               const img = imgIdx >= 0 ? images[imgIdx] : null;
-              const isActive = safeIdx === imgIdx && imgIdx >= 0;
+              if (!img) return null;
+              const isActive = safeIdx === imgIdx;
               return (
                 <button
                   key={viewType}
-                  onClick={() => img && selectIndex(imgIdx)}
-                  onMouseEnter={() => img && selectIndex(imgIdx)}
-                  disabled={!img}
+                  onClick={() => selectIndex(imgIdx)}
+                  onMouseEnter={() => selectIndex(imgIdx)}
                   className={cn(
                     'w-[56px] h-[56px] rounded border-2 overflow-hidden bg-white flex items-center justify-center transition-all',
                     isActive
                       ? 'border-[hsl(var(--sm-gold))] shadow-sm'
-                      : img
-                        ? 'border-border/40 hover:border-[hsl(var(--sm-gold))]/60'
-                        : 'border-dashed border-border/20 opacity-30 cursor-default',
+                      : 'border-border/40 hover:border-[hsl(var(--sm-gold))]/60',
                   )}
                   title={TYPE_LABELS[viewType]}
                 >
-                  {img ? (
-                    <img
-                      src={thumbUrl(img.url)}
-                      alt={TYPE_LABELS[viewType]}
-                      className="w-full h-full object-contain p-0.5"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <Square className="h-4 w-4 text-muted-foreground/20" />
-                  )}
+                  <img
+                    src={thumbUrl(img.url)}
+                    alt={TYPE_LABELS[viewType]}
+                    className="w-full h-full object-contain p-0.5"
+                    loading="lazy"
+                  />
                 </button>
               );
             })
@@ -267,10 +261,6 @@ const ProductImageGallery = ({
           </div>
         )}
 
-        {/* "Click to see full view" text like Amazon */}
-        <p className="text-xs text-muted-foreground text-center mt-2 hidden sm:block">
-          Hover to zoom in
-        </p>
       </div>
     </div>
   );
