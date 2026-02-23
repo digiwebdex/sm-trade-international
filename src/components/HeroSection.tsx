@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, ArrowRight, Pause, Play } from 'lucide-react';
 import OptimizedImage from '@/components/OptimizedImage';
 import heroBg from '@/assets/hero-bg.jpg';
 
-// Only import the 6 images needed for 5-card visible window
+// Static fallback images
 import product3 from '@/assets/products/product-3.png';
 import tiesBlue from '@/assets/products/ties-blue.png';
 import glassware from '@/assets/products/glassware.png';
@@ -14,13 +17,13 @@ import product8 from '@/assets/products/product-8.png';
 import product10 from '@/assets/products/product-10.png';
 import bpatcBuilding from '@/assets/products/bpatc-building.png';
 
-const carouselItems = [
-  { img: product3, label: 'Crystal Awards' },
-  { img: tiesBlue, label: 'Premium Ties' },
-  { img: glassware, label: 'Custom Glassware' },
-  { img: product8, label: 'Gift Sets' },
-  { img: product10, label: 'Premium Souvenirs' },
-  { img: bpatcBuilding, label: 'Model Replicas' },
+const fallbackItems = [
+  { img: product3, label: 'Crystal Awards', id: '' },
+  { img: tiesBlue, label: 'Premium Ties', id: '' },
+  { img: glassware, label: 'Custom Glassware', id: '' },
+  { img: product8, label: 'Gift Sets', id: '' },
+  { img: product10, label: 'Premium Souvenirs', id: '' },
+  { img: bpatcBuilding, label: 'Model Replicas', id: '' },
 ];
 
 const stats = [
@@ -30,11 +33,12 @@ const stats = [
   { value: '50+', label: 'Countries' },
 ];
 
-const SPEED = 3000; // ms per item
+const SPEED = 3500;
 
 const HeroSection = () => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { get } = useSiteSettings();
+  const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -43,19 +47,41 @@ const HeroSection = () => {
   const subtitle = get('hero', 'subtitle', t('hero.subtitle'));
   const ctaPrimary = get('hero', 'cta_primary', t('hero.cta'));
 
+  // Fetch featured products from DB
+  const { data: dbProducts } = useQuery({
+    queryKey: ['hero-products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name_en, name_bn, image_url, product_code')
+        .eq('is_active', true)
+        .order('sort_order')
+        .limit(8);
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 60 * 1000,
+  });
+
+  const carouselItems = dbProducts && dbProducts.length >= 4
+    ? dbProducts.map(p => ({
+        img: p.image_url || '',
+        label: lang === 'en' ? p.name_en : (p.name_bn || p.name_en),
+        id: p.id,
+      }))
+    : fallbackItems;
+
   const len = carouselItems.length;
 
   const next = useCallback(() => setCurrent(i => (i + 1) % len), [len]);
   const prev = useCallback(() => setCurrent(i => (i - 1 + len) % len), [len]);
 
-  // Auto-advance
   useEffect(() => {
     if (paused) return;
     timerRef.current = setInterval(next, SPEED);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [next, paused]);
 
-  // Compute offset for 3D positioning (-2..+2 visible range)
   const getOffset = (index: number) => {
     let diff = index - current;
     if (diff > len / 2) diff -= len;
@@ -63,9 +89,20 @@ const HeroSection = () => {
     return diff;
   };
 
+  const handleProductClick = (item: typeof carouselItems[0], index: number) => {
+    if (index !== current) {
+      setCurrent(index);
+      return;
+    }
+    if (item.id) {
+      navigate(`/product/${item.id}`);
+    } else {
+      navigate('/catalog');
+    }
+  };
+
   return (
     <section id="home" className="relative bg-foreground" style={{ overflow: 'clip' }}>
-      {/* Background image with overlay */}
       <OptimizedImage src={heroBg} alt="" priority blurPlaceholder={false} className="absolute inset-0 w-full h-full object-cover opacity-20" wrapperClassName="absolute inset-0" />
       <div className="absolute inset-0 bg-gradient-to-br from-foreground/90 via-foreground/70 to-primary/30" />
 
@@ -147,59 +184,61 @@ const HeroSection = () => {
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
           >
-            {/* Glow behind carousel */}
             <div className="absolute inset-12 rounded-full bg-accent/15 blur-3xl pointer-events-none" />
 
-            {/* 3D Cube Carousel Stage */}
+            {/* 3D Carousel Stage */}
             <div className="relative w-full py-8">
-              <div className="relative flex items-center justify-center" style={{ height: 280 }}>
+              <div className="relative flex items-center justify-center" style={{ height: 320 }}>
                 {carouselItems.map((item, i) => {
                   const offset = getOffset(i);
                   const absOff = Math.abs(offset);
                   if (absOff > 2) return null;
 
-                  // Coverflow-style 3D illusion
-                  const tX = offset * 155;
-                  const scale = absOff === 0 ? 1.08 : absOff === 1 ? 0.82 : 0.62;
-                  const opacity = absOff === 0 ? 1 : absOff === 1 ? 0.7 : 0.35;
+                  // Full 3D cube transforms
+                  const tX = offset * 170;
+                  const scale = absOff === 0 ? 1.12 : absOff === 1 ? 0.78 : 0.55;
+                  const opacity = absOff === 0 ? 1 : absOff === 1 ? 0.65 : 0.3;
                   const zIndex = 10 - absOff;
-                  const rotY = offset * 35; // subtle perspective tilt via CSS perspective()
+                  const rotY = offset * 40;
+                  const tZ = absOff === 0 ? 0 : absOff === 1 ? -80 : -160;
 
                   return (
                     <div
                       key={i}
                       className="absolute flex flex-col items-center"
                       style={{
-                        transform: `perspective(800px) translateX(${tX}px) rotateY(${rotY}deg) scale(${scale})`,
+                        transform: `perspective(900px) translateX(${tX}px) translateZ(${tZ}px) rotateY(${rotY}deg) scale(${scale})`,
                         opacity,
                         zIndex,
                         transition: 'all 0.7s cubic-bezier(0.25,0.46,0.45,0.94)',
-                        pointerEvents: absOff === 0 ? 'auto' : 'none',
+                        pointerEvents: absOff <= 1 ? 'auto' : 'none',
                       }}
                     >
                       <div
-                        className={`relative p-4 rounded-2xl border bg-gradient-to-b from-gray-50 to-white cursor-pointer transition-shadow duration-500 ${
+                        className={`relative rounded-2xl border overflow-hidden cursor-pointer transition-all duration-500 ${
                           absOff === 0
-                            ? 'border-accent/30 shadow-2xl shadow-accent/20'
-                            : 'border-border/20 shadow-lg'
+                            ? 'border-[hsl(var(--sm-gold))]/40 shadow-2xl shadow-[hsl(var(--sm-gold))]/20 ring-2 ring-[hsl(var(--sm-gold))]/20'
+                            : 'border-white/10 shadow-lg'
                         }`}
-                        style={{ width: 180 }}
-                        onClick={() => setCurrent(i)}
+                        style={{ width: absOff === 0 ? 220 : 180 }}
+                        onClick={() => handleProductClick(item, i)}
                       >
-                        <OptimizedImage
-                          src={item.img}
-                          alt={item.label}
-                          className="w-full h-40 object-contain"
-                          sizes="180px"
-                          priority={absOff <= 1}
-                          blurPlaceholder={false}
-                        />
+                        <div className="bg-white p-3">
+                          <OptimizedImage
+                            src={item.img}
+                            alt={item.label}
+                            className="w-full h-48 object-contain"
+                            sizes="220px"
+                            priority={absOff <= 1}
+                            blurPlaceholder={false}
+                          />
+                        </div>
                       </div>
-                      {/* Label */}
+                      {/* Label pill — only visible on active card */}
                       <div
-                        className={`mt-3 text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap transition-all duration-500 ${
+                        className={`mt-3 text-xs font-semibold px-4 py-1.5 rounded-full whitespace-nowrap transition-all duration-500 ${
                           absOff === 0
-                            ? 'bg-accent text-white opacity-100 translate-y-0'
+                            ? 'bg-[hsl(var(--sm-gold))] text-white opacity-100 translate-y-0'
                             : 'bg-transparent text-white/30 opacity-0 translate-y-2'
                         }`}
                         style={{ fontFamily: 'DM Sans, sans-serif' }}
@@ -213,25 +252,24 @@ const HeroSection = () => {
             </div>
 
             {/* Reflection */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-8 bg-accent/10 blur-2xl rounded-full" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-8 bg-[hsl(var(--sm-gold))]/10 blur-2xl rounded-full" />
 
             {/* Carousel controls */}
             <div className="flex items-center gap-6 mt-2 relative z-30">
               <button
                 onClick={prev}
-                className="w-11 h-11 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:border-accent/50 hover:bg-accent/10 transition-all duration-300"
+                className="w-11 h-11 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:border-[hsl(var(--sm-gold))]/50 hover:bg-[hsl(var(--sm-gold))]/10 transition-all duration-300"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
 
-              {/* Progress dots */}
               <div className="flex gap-1.5">
                 {carouselItems.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrent(i)}
                     className={`rounded-full transition-all duration-400 ${
-                      i === current ? 'w-7 h-2 bg-accent' : 'w-2 h-2 bg-white/25 hover:bg-white/50'
+                      i === current ? 'w-7 h-2 bg-[hsl(var(--sm-gold))]' : 'w-2 h-2 bg-white/25 hover:bg-white/50'
                     }`}
                   />
                 ))}
@@ -239,12 +277,11 @@ const HeroSection = () => {
 
               <button
                 onClick={next}
-                className="w-11 h-11 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:border-accent/50 hover:bg-accent/10 transition-all duration-300"
+                className="w-11 h-11 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:border-[hsl(var(--sm-gold))]/50 hover:bg-[hsl(var(--sm-gold))]/10 transition-all duration-300"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
 
-              {/* Pause/play */}
               <button
                 onClick={() => setPaused(p => !p)}
                 className="w-9 h-9 rounded-full border border-white/15 bg-white/5 backdrop-blur-sm flex items-center justify-center text-white/40 hover:text-white/70 transition-all duration-300"
@@ -257,7 +294,6 @@ const HeroSection = () => {
         </div>
       </div>
 
-      {/* Bottom fade */}
       <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent z-10" />
     </section>
   );
