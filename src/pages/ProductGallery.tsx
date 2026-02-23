@@ -13,6 +13,7 @@ interface ProductWithVariants {
   name_en: string;
   name_bn: string;
   image_url: string | null;
+  product_code: string | null;
   category_id: string | null;
   categories: { name_en: string; name_bn: string } | null;
   variants: {
@@ -38,7 +39,7 @@ const ProductGallery = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name_en, name_bn, image_url, category_id, categories(name_en, name_bn)')
+        .select('id, name_en, name_bn, image_url, category_id, product_code, categories(name_en, name_bn)')
         .eq('is_active', true)
         .order('sort_order');
       if (error) throw error;
@@ -180,7 +181,7 @@ const ProductGallery = () => {
                 {/* Image card */}
                 <div
                   className="relative aspect-square rounded-2xl overflow-hidden bg-white border border-border/20 cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-border/40"
-                  onClick={() => navigate(`/product/${product.id}`)}
+                  onClick={() => navigate(`/product/${product.product_code ? encodeURIComponent(product.product_code) : product.name_en.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || product.id}`)}
                 >
                   <OptimizedImage
                     src={getDisplayImage(product)}
@@ -232,7 +233,7 @@ const ProductGallery = () => {
                         onMouseLeave={() => onVariantLeave(product.id)}
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/product/${product.id}`);
+                          navigate(`/product/${product.product_code ? encodeURIComponent(product.product_code) : product.name_en.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || product.id}`);
                         }}
                         className="w-6 h-6 rounded-full border-2 border-background overflow-hidden transition-transform hover:scale-125 hover:border-[hsl(var(--sm-gold))]"
                         title={v.variant_label_en}

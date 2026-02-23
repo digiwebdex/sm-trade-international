@@ -58,6 +58,7 @@ const staticProducts: StaticProduct[] = [
 
 type DisplayProduct = {
   dbId?: string;
+  slug?: string;
   src: string;
   title: string;
   titleEn: string;
@@ -114,6 +115,7 @@ const ProductsSection = () => {
         const cat = (p as any).categories;
         return {
           dbId: p.id,
+          slug: (p as any).product_code ? encodeURIComponent((p as any).product_code) : p.name_en.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || p.id,
           src: p.image_url || '',
           title: lang === 'en' ? p.name_en : (p.name_bn || p.name_en),
           titleEn: p.name_en,
@@ -268,7 +270,7 @@ const ProductsSection = () => {
               <div
                 key={i}
                 className="group cursor-pointer overflow-hidden rounded-2xl bg-background shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative border border-border/30 flex flex-col"
-                onClick={() => p.dbId ? navigate(`/product/${p.dbId}`) : setLightbox(p)}
+                onClick={() => p.dbId ? navigate(`/product/${p.slug || p.dbId}`) : setLightbox(p)}
               >
                 {!p.isActive && (
                   <span className="absolute top-3 left-3 z-10 bg-muted text-muted-foreground text-[10px] px-2 py-0.5 rounded-full">

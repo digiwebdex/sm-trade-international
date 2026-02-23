@@ -16,7 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ProductImageGallery, { TypedImage } from '@/components/product/ProductImageGallery';
 import OptimizedImage from '@/components/OptimizedImage';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils'; // utility for conditional classnames
+import { cn } from '@/lib/utils';
+import { isUUID, productSlug } from '@/lib/productSlug';
 
 const BULK_TIERS = [
   { min: 1, max: 49, discount: 0, label: '1–49' },
@@ -39,45 +40,67 @@ const ProductDetail = () => {
   const { data: product, isLoading } = useQuery({
     queryKey: ['product-detail', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      if (!id) return null;
+      // Support both UUID and slug (product_code or name-based) lookup
+      if (isUUID(id)) {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*, categories(name_en, name_bn)')
+          .eq('id', id)
+          .maybeSingle();
+        if (error) throw error;
+        return data;
+      }
+      // Try product_code first
+      const { data: byCode } = await supabase
         .from('products')
         .select('*, categories(name_en, name_bn)')
-        .eq('id', id!)
+        .eq('product_code', decodeURIComponent(id))
         .maybeSingle();
-      if (error) throw error;
-      return data;
+      if (byCode) return byCode;
+      // Fallback: fetch all and match slug
+      const { data: all } = await supabase
+        .from('products')
+        .select('*, categories(name_en, name_bn)');
+      const slug = decodeURIComponent(id);
+      return all?.find(p => {
+        const s = p.name_en.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        return s === slug;
+      }) || null;
     },
     enabled: !!id,
   });
 
+  const productId = product?.id;
+
   const { data: variants = [] } = useQuery({
-    queryKey: ['product-variants', id],
+    queryKey: ['product-variants', productId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('product_variants')
         .select('*')
-        .eq('product_id', id!)
+        .eq('product_id', productId!)
         .eq('is_active', true)
         .order('sort_order');
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!productId,
   });
 
   const { data: productImages = [] } = useQuery({
-    queryKey: ['product-images', id],
+    queryKey: ['product-images', productId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('product_images')
         .select('*')
-        .eq('product_id', id!)
+        .eq('product_id', productId!)
         .is('variant_id', null)
         .order('sort_order');
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!productId,
   });
 
   const { data: relatedProducts = [] } = useQuery({
@@ -87,7 +110,7 @@ const ProductDetail = () => {
         .from('products')
         .select('*, categories(name_en, name_bn)')
         .eq('category_id', product!.category_id!)
-        .neq('id', id!)
+        .neq('id', productId!)
         .eq('is_active', true)
         .limit(4);
       if (error) throw error;
@@ -559,7 +582,7 @@ const ProductDetail = () => {
                 return (
                   <Link
                     key={rp.id}
-                    to={`/product/${rp.id}`}
+                    to={`/product/${productSlug(rp)}`}
                     className="group rounded-lg overflow-hidden bg-background border border-border/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                   >
                     <div className="aspect-square overflow-hidden bg-white">
