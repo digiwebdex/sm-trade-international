@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ProductImageGallery, { TypedImage } from '@/components/product/ProductImageGallery';
 import OptimizedImage from '@/components/OptimizedImage';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 const BULK_TIERS = [
   { min: 1, max: 49, discount: 0, label: '1–49' },
@@ -64,7 +65,6 @@ const ProductDetail = () => {
     enabled: !!id,
   });
 
-  // All product-level typed images (variant_id IS NULL)
   const { data: productImages = [] } = useQuery({
     queryKey: ['product-images', id],
     queryFn: async () => {
@@ -118,7 +118,6 @@ const ProductDetail = () => {
     return variants[0];
   }, [variants, selectedDesign, selectedColor]);
 
-  // Variant-specific images (if any)
   const { data: variantImages = [] } = useQuery({
     queryKey: ['product-view-images', id, activeVariant?.id ?? null],
     queryFn: async () => {
@@ -144,32 +143,18 @@ const ProductDetail = () => {
       result.push(img);
     };
 
-    // 1. Variant images first (if selected variant has images)
     (variantImages as any[]).forEach(img => add({
-      id: img.id,
-      url: img.image_url,
-      image_type: img.image_type ?? 'main',
-      variant_id: img.variant_id,
+      id: img.id, url: img.image_url, image_type: img.image_type ?? 'main', variant_id: img.variant_id,
     }));
-
-    // 2. Fallback to product-level typed images
     (productImages as any[]).forEach(img => add({
-      id: img.id,
-      url: img.image_url,
-      image_type: img.image_type ?? 'main',
-      variant_id: null,
+      id: img.id, url: img.image_url, image_type: img.image_type ?? 'main', variant_id: null,
     }));
-
-    // 3. Fallback to variant's single image_url
     if (activeVariant?.image_url) {
       add({ url: activeVariant.image_url, image_type: 'main', variant_id: activeVariant.id });
     }
-
-    // 4. Final fallback: product main image_url
     if (product?.image_url) {
       add({ url: product.image_url, image_type: 'main' });
     }
-
     return result;
   }, [variantImages, productImages, activeVariant, product]);
 
@@ -184,7 +169,6 @@ const ProductDetail = () => {
   const handleDesignSelect = (design: string) => {
     setSelectedDesign(design === selectedDesign ? null : design);
   };
-
   const handleColorSelect = (colorName: string) => {
     setSelectedColor(colorName === selectedColor ? null : colorName);
   };
@@ -204,9 +188,7 @@ const ProductDetail = () => {
 
   const handleWhatsApp = () => {
     if (!product) return;
-    const variantInfo = activeVariant
-      ? ` (${activeVariant.variant_label_en})`
-      : '';
+    const variantInfo = activeVariant ? ` (${activeVariant.variant_label_en})` : '';
     const msg = encodeURIComponent(
       `Hi, I'm interested in: ${product.name_en}${variantInfo}, Qty: ${quantity}. Please share price & availability.`
     );
@@ -226,16 +208,21 @@ const ProductDetail = () => {
   // ─── Loading / Not found ───────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-8">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <Skeleton className="h-5 w-48 mb-8" />
-          <div className="grid md:grid-cols-2 gap-10">
-            <Skeleton className="aspect-square rounded-2xl" />
+      <div className="min-h-screen bg-background pt-4">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <Skeleton className="h-4 w-48 mb-4" />
+          <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)] gap-6">
+            <div className="flex gap-3">
+              <div className="hidden sm:flex flex-col gap-2 w-14">
+                {[...Array(4)].map((_, i) => <Skeleton key={i} className="w-14 h-14 rounded" />)}
+              </div>
+              <Skeleton className="flex-1 aspect-square rounded-lg" />
+            </div>
             <div className="space-y-4">
-              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-7 w-3/4" />
               <Skeleton className="h-5 w-40" />
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-12 w-48" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-10 w-48" />
             </div>
           </div>
         </div>
@@ -263,29 +250,29 @@ const ProductDetail = () => {
   const stock = activeVariant ? (activeVariant as any).stock ?? null : null;
 
   return (
-    <div className="min-h-screen bg-background pt-4 pb-20">
-      <div className="container mx-auto px-4 max-w-6xl">
+    <div className="min-h-screen bg-background pt-2 pb-20">
+      <div className="container mx-auto px-4 max-w-7xl">
 
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6 flex-wrap">
-          <Link to="/" className="hover:text-foreground transition-colors">{lang === 'en' ? 'Home' : 'হোম'}</Link>
+        {/* Breadcrumb — Amazon style */}
+        <nav className="flex items-center gap-1.5 text-xs text-muted-foreground py-3 flex-wrap">
+          <Link to="/" className="hover:text-accent hover:underline transition-colors">{lang === 'en' ? 'Home' : 'হোম'}</Link>
           <ChevronRight className="h-3 w-3" />
-          <Link to="/products" className="hover:text-foreground transition-colors">{lang === 'en' ? 'Products' : 'পণ্য'}</Link>
+          <Link to="/products" className="hover:text-accent hover:underline transition-colors">{lang === 'en' ? 'Products' : 'পণ্য'}</Link>
           {categoryLabel && (
             <>
               <ChevronRight className="h-3 w-3" />
-              <Link to={`/catalog?category=${product.category_id}`} className="hover:text-foreground transition-colors">{categoryLabel}</Link>
+              <Link to={`/catalog?category=${product.category_id}`} className="hover:text-accent hover:underline transition-colors">{categoryLabel}</Link>
             </>
           )}
           <ChevronRight className="h-3 w-3" />
-          <span className="text-foreground font-medium truncate max-w-[200px]">{title}</span>
+          <span className="text-foreground truncate max-w-[200px]">{title}</span>
         </nav>
 
-        {/* ─── Main Layout ───────────────────────────────────────── */}
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-14 items-start">
+        {/* ─── Main 2-Column Layout (Amazon: image left, info right) ─── */}
+        <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)] gap-6 lg:gap-10 items-start">
 
-          {/* LEFT — Image gallery */}
-          <div className="md:sticky md:top-20">
+          {/* LEFT — Image gallery with vertical thumbnails */}
+          <div className="lg:sticky lg:top-20">
             <ProductImageGallery
               images={galleryImages}
               selectedVariantId={activeVariant?.id ?? null}
@@ -293,70 +280,103 @@ const ProductDetail = () => {
             />
           </div>
 
-          {/* RIGHT — Product details */}
-          <div className="flex flex-col gap-5">
+          {/* RIGHT — Product Info (Amazon style) */}
+          <div className="flex flex-col gap-3">
 
-            {/* Category + availability */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {categoryLabel && (
-                <Badge variant="outline" className="text-xs">{categoryLabel}</Badge>
-              )}
-              {product.is_active ? (
-                <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> {lang === 'en' ? 'In Stock' : 'স্টকে আছে'}
-                </span>
-              ) : (
-                <Badge variant="secondary" className="text-xs">{lang === 'en' ? 'Currently Unavailable' : 'অনুপলব্ধ'}</Badge>
-              )}
-            </div>
+            {/* Title — large, Amazon-style */}
+            <h1 className="text-xl md:text-2xl font-normal text-foreground leading-snug">
+              {title}
+            </h1>
 
-            {/* Name */}
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">{title}</h1>
-
-            {/* Product code / SKU */}
-            {(activeVariant as any)?.sku ? (
-              <div className="flex items-center gap-2 py-1.5 px-3 bg-muted/50 rounded-lg border border-border/40 w-fit">
-                <span className="text-xs text-muted-foreground">{lang === 'en' ? 'SKU' : 'পণ্য কোড'}:</span>
-                <code className="text-xs font-mono font-bold text-foreground">{(activeVariant as any).sku}</code>
-              </div>
-            ) : (product as any).product_code ? (
-              <div className="flex items-center gap-2 py-1.5 px-3 bg-muted/50 rounded-lg border border-border/40 w-fit">
-                <span className="text-xs text-muted-foreground">Code:</span>
-                <code className="text-xs font-mono font-bold text-foreground">{(product as any).product_code}</code>
-              </div>
-            ) : null}
-
-            {/* Price */}
-            {unitPrice > 0 && (
-              <div className="flex items-baseline gap-3">
-                <span className="text-3xl font-bold text-[hsl(var(--sm-gold))]">
-                  ৳{discountedPrice.toFixed(0)}
-                </span>
-                {currentTier.discount > 0 && (
-                  <>
-                    <span className="text-lg text-muted-foreground line-through">৳{unitPrice.toFixed(0)}</span>
-                    <Badge className="bg-green-600 text-white">{currentTier.discount}% OFF</Badge>
-                  </>
-                )}
-                <span className="text-xs text-muted-foreground">/ {lang === 'en' ? 'unit' : 'পিস'}</span>
-              </div>
-            )}
-
-            {/* Description */}
-            {desc && (
-              <p className="text-muted-foreground leading-relaxed text-[15px]">{desc}</p>
+            {/* Brand / Category link */}
+            {categoryLabel && (
+              <Link
+                to={`/catalog?category=${product.category_id}`}
+                className="text-sm text-accent hover:text-accent/80 hover:underline w-fit"
+              >
+                {lang === 'en' ? `Visit the ${categoryLabel} Store` : `${categoryLabel} স্টোর দেখুন`}
+              </Link>
             )}
 
             <div className="h-px bg-border/50" />
 
+            {/* Price section — Amazon style */}
+            {unitPrice > 0 && (
+              <div className="space-y-1">
+                {currentTier.discount > 0 && (
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-medium text-destructive">-{currentTier.discount}%</span>
+                    <span className="text-2xl font-medium text-foreground">৳{discountedPrice.toFixed(0)}</span>
+                  </div>
+                )}
+                {currentTier.discount === 0 && (
+                  <span className="text-2xl font-medium text-foreground">৳{unitPrice.toFixed(0)}</span>
+                )}
+                {currentTier.discount > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    M.R.P.: <span className="line-through">৳{unitPrice.toFixed(0)}</span>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">{lang === 'en' ? 'Inclusive of all taxes' : 'সকল কর সহ'}</p>
+              </div>
+            )}
+
+            {/* Product code / SKU */}
+            {((activeVariant as any)?.sku || (product as any).product_code) && (
+              <div className="text-xs text-muted-foreground">
+                {lang === 'en' ? 'SKU' : 'পণ্য কোড'}: <span className="font-mono font-semibold text-foreground">{(activeVariant as any)?.sku || (product as any).product_code}</span>
+              </div>
+            )}
+
+            <div className="h-px bg-border/50" />
+
+            {/* ─── Color Variant Grid (Amazon-style with images & prices) ─── */}
+            {uniqueColors.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-sm">
+                  <span className="text-muted-foreground">{lang === 'en' ? 'Colour' : 'রঙ'}: </span>
+                  <span className="font-semibold text-foreground">{selectedColor?.toUpperCase() || uniqueColors[0]?.color_name?.toUpperCase()}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {uniqueColors.map(v => {
+                    const isActive = selectedColor === v.color_name || (!selectedColor && v === uniqueColors[0]);
+                    return (
+                      <button
+                        key={v.color_name}
+                        onClick={() => handleColorSelect(v.color_name!)}
+                        className={cn(
+                          'w-[70px] rounded-lg border-2 overflow-hidden transition-all p-1',
+                          isActive
+                            ? 'border-[hsl(var(--sm-gold))] shadow-md'
+                            : 'border-border/40 hover:border-border',
+                        )}
+                      >
+                        {v.image_url ? (
+                          <img src={v.image_url} alt={v.color_name ?? ''} className="w-full aspect-square object-contain rounded" />
+                        ) : (
+                          <div
+                            className="w-full aspect-square rounded"
+                            style={{ backgroundColor: v.color_hex ?? '#ccc' }}
+                          />
+                        )}
+                        {v.unit_price && (
+                          <div className="text-[10px] text-center mt-1 font-medium text-foreground">
+                            ৳{Number(v.unit_price).toFixed(0)}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* ─── Design Selector ─── */}
             {uniqueDesigns.length > 0 && (
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm">{lang === 'en' ? 'Design' : 'ডিজাইন'}</h3>
-                  {selectedDesign && (
-                    <span className="text-xs text-muted-foreground">{selectedDesign}</span>
-                  )}
+              <div className="space-y-2">
+                <div className="text-sm">
+                  <span className="text-muted-foreground">{lang === 'en' ? 'Design' : 'ডিজাইন'}: </span>
+                  <span className="font-semibold text-foreground">{selectedDesign || uniqueDesigns[0]?.design_type}</span>
                 </div>
                 <Select
                   value={selectedDesign ?? ''}
@@ -376,116 +396,120 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* ─── Color Swatch Selector ─── */}
-            {uniqueColors.length > 0 && (
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm">{lang === 'en' ? 'Color' : 'রঙ'}</h3>
-                  {selectedColor && (
-                    <span className="text-xs text-muted-foreground">{selectedColor}</span>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2.5 items-center">
-                  {uniqueColors.map(v => {
-                    const isActive = selectedColor === v.color_name;
-                    const hex = v.color_hex ?? '#999';
-                    return (
-                      <button
-                        key={v.color_name}
-                        onClick={() => handleColorSelect(v.color_name!)}
-                        title={v.color_name ?? hex}
-                        className={`
-                          relative w-9 h-9 rounded-full border-2 transition-all duration-200
-                          hover:scale-110 focus:outline-none
-                          ${isActive
-                            ? 'border-[hsl(var(--sm-gold))] ring-2 ring-[hsl(var(--sm-gold))]/40 scale-110 shadow-md'
-                            : 'border-border/50 hover:border-border'
-                          }
-                        `}
-                        style={{ backgroundColor: hex }}
-                      >
-                        {isActive && (
-                          <span className="absolute inset-0 flex items-center justify-center">
-                            <svg className="w-3 h-3 text-white drop-shadow-md" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                {/* Color name label strip */}
-                <div className="flex flex-wrap gap-2">
-                  {uniqueColors.map(v => (
-                    <button
-                      key={`label-${v.color_name}`}
-                      onClick={() => handleColorSelect(v.color_name!)}
-                      className={`px-2.5 py-1 rounded-full text-[11px] border transition-all ${
-                        selectedColor === v.color_name
-                          ? 'border-[hsl(var(--sm-gold))] bg-[hsl(var(--sm-gold))]/10 text-foreground font-semibold'
-                          : 'border-border/40 text-muted-foreground hover:border-border'
-                      }`}
-                    >
-                      {v.color_name}
-                    </button>
+            <div className="h-px bg-border/50" />
+
+            {/* About this item / Description */}
+            {desc && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-bold text-foreground">{lang === 'en' ? 'About this item' : 'এই পণ্য সম্পর্কে'}</h3>
+                <ul className="space-y-1.5 text-sm text-foreground/90 leading-relaxed">
+                  {desc.split(/[.।]\s*/).filter(Boolean).map((sentence, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-foreground/40 shrink-0" />
+                      <span>{sentence.trim()}</span>
+                    </li>
                   ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Highlights */}
+            <div className="space-y-1.5">
+              {[
+                lang === 'en' ? 'Custom branding & logo engraving available' : 'কাস্টম ব্র্যান্ডিং ও লোগো খোদাই উপলব্ধ',
+                lang === 'en' ? 'Bulk order discounts for 50+ units' : '৫০+ ইউনিটে বাল্ক অর্ডার ডিসকাউন্ট',
+                lang === 'en' ? 'Premium quality materials & craftsmanship' : 'প্রিমিয়াম মানের উপকরণ ও কারুশিল্প',
+              ].map((h, i) => (
+                <div key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[hsl(var(--sm-gold))] shrink-0" />
+                  {h}
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
 
-            {/* Stock indicator */}
-            {stock !== null && (
-              <div className="flex items-center gap-2 text-sm">
-                <Package className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">{lang === 'en' ? 'Stock' : 'স্টক'}:</span>
-                <span className={`font-semibold ${stock > 10 ? 'text-green-600' : stock > 0 ? 'text-amber-600' : 'text-destructive'}`}>
-                  {stock > 10
-                    ? (lang === 'en' ? 'Available' : 'পাওয়া যাচ্ছে')
-                    : stock > 0
-                    ? (lang === 'en' ? `Only ${stock} left` : `মাত্র ${stock}টি বাকি`)
+            <div className="h-px bg-border/50" />
+
+            {/* ─── Buy Box (Amazon right sidebar style, inline here) ─── */}
+            <div className="rounded-lg border border-border/50 p-4 space-y-3 bg-card">
+              {/* Price in buy box */}
+              {unitPrice > 0 && (
+                <div className="text-xl font-medium text-foreground">
+                  ৳{discountedPrice.toFixed(0)}<span className="text-xs align-top text-muted-foreground ml-0.5">00</span>
+                </div>
+              )}
+
+              {/* Stock */}
+              <div className={cn(
+                'text-lg font-medium',
+                stock === null || stock === undefined
+                  ? 'text-green-600'
+                  : stock > 0
+                    ? 'text-green-600'
+                    : 'text-destructive'
+              )}>
+                {stock === null || stock === undefined
+                  ? (lang === 'en' ? 'In stock' : 'স্টকে আছে')
+                  : stock > 0
+                    ? (lang === 'en' ? `In stock (${stock} left)` : `স্টকে আছে (${stock}টি বাকি)`)
                     : (lang === 'en' ? 'Out of stock' : 'স্টক নেই')}
-                </span>
               </div>
-            )}
 
-            {/* Quantity */}
-            <div className="space-y-2">
-              <h3 className="font-semibold text-sm">{lang === 'en' ? 'Quantity' : 'পরিমাণ'}</h3>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center border border-border rounded-xl overflow-hidden shadow-sm">
+              {/* Quantity */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">{lang === 'en' ? 'Quantity' : 'পরিমাণ'}:</span>
+                <div className="flex items-center border border-border rounded-lg overflow-hidden">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="p-2.5 hover:bg-muted transition-colors"
+                    className="px-2.5 py-1.5 hover:bg-muted transition-colors border-r border-border"
                   >
-                    <Minus className="h-4 w-4" />
+                    <Minus className="h-3.5 w-3.5" />
                   </button>
                   <Input
                     type="number"
                     min={1}
                     value={quantity}
                     onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-20 text-center border-0 rounded-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="w-14 text-center border-0 rounded-none h-8 focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm"
                   />
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className="p-2.5 hover:bg-muted transition-colors"
+                    className="px-2.5 py-1.5 hover:bg-muted transition-colors border-l border-border"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                {activeVariant?.min_quantity && activeVariant.min_quantity > 1 && (
-                  <span className="text-xs text-muted-foreground">
-                    {lang === 'en' ? `Min: ${activeVariant.min_quantity}` : `সর্বনিম্ন: ${activeVariant.min_quantity}`}
-                  </span>
-                )}
               </div>
+
+              {/* CTA Buttons — Amazon style stacked */}
+              <Button
+                onClick={handleAddToQuote}
+                className="w-full bg-[hsl(var(--sm-gold))] hover:bg-[hsl(var(--sm-gold))]/90 text-white gap-2 rounded-full h-10"
+              >
+                <ShoppingBag className="h-4 w-4" />
+                {lang === 'en' ? 'Add to Quote Basket' : 'কোটেশন বাস্কেটে যোগ করুন'}
+              </Button>
+              <Button
+                onClick={handleWhatsApp}
+                className="w-full bg-[hsl(142,70%,40%)] hover:bg-[hsl(142,70%,35%)] text-white gap-2 rounded-full h-10"
+              >
+                <MessageCircle className="h-4 w-4" />
+                {lang === 'en' ? 'Order via WhatsApp' : 'WhatsApp এ অর্ডার করুন'}
+              </Button>
+
+              {/* Share */}
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1.5 text-xs text-accent hover:underline"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                {lang === 'en' ? 'Share' : 'শেয়ার'}
+              </button>
             </div>
 
             {/* Bulk pricing */}
             {unitPrice > 0 && (
-              <div className="bg-secondary rounded-xl p-4 space-y-3 border border-border/30">
-                <div className="flex items-center gap-2 text-sm font-semibold">
+              <div className="rounded-lg border border-border/50 p-4 space-y-3 bg-card">
+                <div className="flex items-center gap-2 text-sm font-bold text-foreground">
                   <Calculator className="h-4 w-4 text-[hsl(var(--sm-gold))]" />
                   {lang === 'en' ? 'Bulk Pricing' : 'বাল্ক মূল্য'}
                 </div>
@@ -494,11 +518,12 @@ const ProductDetail = () => {
                     <button
                       key={tier.label}
                       onClick={() => setQuantity(tier.min)}
-                      className={`text-center p-2 rounded-lg text-xs transition-all ${
+                      className={cn(
+                        'text-center p-2 rounded-lg text-xs transition-all border',
                         currentTier.label === tier.label
-                          ? 'bg-[hsl(var(--sm-gold))]/15 border border-[hsl(var(--sm-gold))]/40 font-semibold'
-                          : 'bg-background border border-border/50 text-muted-foreground hover:border-border'
-                      }`}
+                          ? 'bg-[hsl(var(--sm-gold))]/10 border-[hsl(var(--sm-gold))]/50 font-semibold text-foreground'
+                          : 'bg-background border-border/50 text-muted-foreground hover:border-border',
+                      )}
                     >
                       <div className="font-medium">{tier.label}</div>
                       <div className="text-[10px]">{tier.discount > 0 ? `${tier.discount}% off` : (lang === 'en' ? 'Base' : 'বেস')}</div>
@@ -518,49 +543,6 @@ const ProductDetail = () => {
                 </div>
               </div>
             )}
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <Button
-                size="lg"
-                onClick={handleAddToQuote}
-                className="bg-[hsl(var(--sm-gold))] hover:bg-[hsl(var(--sm-gold))]/90 text-white gap-2 rounded-xl flex-1"
-              >
-                <ShoppingBag className="h-5 w-5" />
-                {lang === 'en' ? 'Add to Quote Basket' : 'কোটেশন বাস্কেটে যোগ করুন'}
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={handleWhatsApp}
-                className="gap-2 rounded-xl"
-              >
-                <MessageCircle className="h-5 w-5" />
-                {lang === 'en' ? 'WhatsApp' : 'হোয়াটসঅ্যাপ'}
-              </Button>
-              <Button
-                size="lg"
-                variant="ghost"
-                onClick={handleShare}
-                className="gap-2 rounded-xl"
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Highlights */}
-            <div className="border-t border-border pt-4 space-y-2">
-              {[
-                lang === 'en' ? 'Custom branding & logo engraving available' : 'কাস্টম ব্র্যান্ডিং ও লোগো খোদাই উপলব্ধ',
-                lang === 'en' ? 'Bulk order discounts for 50+ units' : '৫০+ ইউনিটে বাল্ক অর্ডার ডিসকাউন্ট',
-                lang === 'en' ? 'Premium quality materials & craftsmanship' : 'প্রিমিয়াম মানের উপকরণ ও কারুশিল্প',
-              ].map((h, i) => (
-                <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[hsl(var(--sm-gold))] shrink-0" />
-                  {h}
-                </div>
-              ))}
-            </div>
           </div>
         </div>
 
@@ -578,7 +560,7 @@ const ProductDetail = () => {
                   <Link
                     key={rp.id}
                     to={`/product/${rp.id}`}
-                    className="group rounded-2xl overflow-hidden bg-background border border-border/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                    className="group rounded-lg overflow-hidden bg-background border border-border/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                   >
                     <div className="aspect-square overflow-hidden bg-white">
                       {rp.image_url ? (
