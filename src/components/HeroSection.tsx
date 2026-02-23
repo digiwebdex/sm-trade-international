@@ -42,7 +42,6 @@ const stats = [
   { value: '50+', label: 'Countries' },
 ];
 
-const ITEM_W = 220; // px per card including gap
 const SPEED = 3000; // ms per item
 
 const HeroSection = () => {
@@ -58,26 +57,23 @@ const HeroSection = () => {
 
   const len = carouselItems.length;
 
-  const next = useCallback(() => setCurrent(i => i + 1), []);
-  const prev = useCallback(() => setCurrent(i => i - 1), []);
+  const next = useCallback(() => setCurrent(i => (i + 1) % len), [len]);
+  const prev = useCallback(() => setCurrent(i => (i - 1 + len) % len), [len]);
 
-  // Auto-advance indefinitely
+  // Auto-advance
   useEffect(() => {
     if (paused) return;
     timerRef.current = setInterval(next, SPEED);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [next, paused]);
 
-  // Normalise index for display
-  const normIndex = ((current % len) + len) % len;
-
-  // We render 5 copies so the strip is wide enough to scroll in both directions
-  const copies = 5;
-  const items = Array.from({ length: copies }, () => carouselItems).flat();
-  const centerOffset = Math.floor(copies / 2) * len;
-
-  // Translate so the current item is centred
-  const translateX = -(current + centerOffset) * ITEM_W;
+  // Compute offset for 3D positioning (-2..+2 visible range)
+  const getOffset = (index: number) => {
+    let diff = index - current;
+    if (diff > len / 2) diff -= len;
+    if (diff < -len / 2) diff += len;
+    return diff;
+  };
 
   return (
     <section id="home" className="relative overflow-hidden bg-foreground">
@@ -156,7 +152,7 @@ const HeroSection = () => {
             </div>
           </div>
 
-          {/* Right — Infinite Carousel */}
+          {/* Right — 3D Cube Carousel */}
           <div
             className="relative flex flex-col items-center justify-center"
             style={{ animation: 'heroFadeUp 0.7s 0.4s ease-out both' }}
@@ -166,49 +162,56 @@ const HeroSection = () => {
             {/* Glow behind carousel */}
             <div className="absolute inset-12 rounded-full bg-accent/15 blur-3xl pointer-events-none" />
 
-            {/* Edge fade masks */}
-            <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-foreground to-transparent z-20 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-foreground to-transparent z-20 pointer-events-none" />
+            {/* 3D Carousel Stage */}
+            <div className="relative w-full py-8" style={{ perspective: '1200px' }}>
+              <div className="relative flex items-center justify-center" style={{ height: 260 }}>
+                {carouselItems.map((item, i) => {
+                  const offset = getOffset(i);
+                  const absOff = Math.abs(offset);
+                  const visible = absOff <= 2;
+                  if (!visible) return null;
 
-            {/* Scrolling strip */}
-            <div className="relative w-full overflow-hidden py-8">
-              <div
-                className="flex items-center transition-transform duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
-                style={{
-                  transform: `translateX(calc(50% - ${ITEM_W / 2}px + ${translateX}px))`,
-                  willChange: 'transform',
-                }}
-              >
-                {items.map((item, i) => {
-                  const realIdx = i % len;
-                  const isActive = realIdx === normIndex;
+                  const rotateY = offset * 45;
+                  const tX = offset * 160;
+                  const tZ = absOff === 0 ? 80 : absOff === 1 ? 0 : -60;
+                  const scale = absOff === 0 ? 1.1 : absOff === 1 ? 0.85 : 0.65;
+                  const opacity = absOff === 0 ? 1 : absOff === 1 ? 0.6 : 0.25;
+                  const zIndex = 10 - absOff;
+
                   return (
                     <div
                       key={i}
-                      className="shrink-0 flex flex-col items-center"
-                      style={{ width: ITEM_W }}
+                      className="absolute flex flex-col items-center"
+                      style={{
+                        transform: `translateX(${tX}px) translateZ(${tZ}px) rotateY(${rotateY}deg) scale(${scale})`,
+                        opacity,
+                        zIndex,
+                        transition: 'all 0.7s cubic-bezier(0.25,0.46,0.45,0.94)',
+                        pointerEvents: absOff === 0 ? 'auto' : 'none',
+                        transformStyle: 'preserve-3d',
+                      }}
                     >
                       <div
-                        className={`relative p-4 rounded-2xl border transition-all duration-500 bg-white cursor-pointer ${
-                          isActive
-                            ? 'border-accent/30 shadow-2xl shadow-accent/20 scale-110 z-10'
-                            : 'border-border/20 scale-[0.85] opacity-50'
+                        className={`relative p-4 rounded-2xl border bg-white cursor-pointer transition-shadow duration-500 ${
+                          absOff === 0
+                            ? 'border-accent/30 shadow-2xl shadow-accent/20'
+                            : 'border-border/20'
                         }`}
-                        onClick={() => setCurrent(current + (realIdx - normIndex))}
+                        onClick={() => setCurrent(i)}
                       >
                         <OptimizedImage
                           src={item.img}
                           alt={item.label}
                           className="w-36 h-36 md:w-40 md:h-40 object-contain"
                           sizes="160px"
-                          priority={i < len}
+                          priority={absOff <= 1}
                           blurPlaceholder={false}
                         />
                       </div>
                       {/* Label */}
                       <div
                         className={`mt-3 text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap transition-all duration-500 ${
-                          isActive
+                          absOff === 0
                             ? 'bg-accent text-white opacity-100 translate-y-0'
                             : 'bg-transparent text-white/30 opacity-0 translate-y-2'
                         }`}
@@ -239,9 +242,9 @@ const HeroSection = () => {
                 {carouselItems.map((_, i) => (
                   <button
                     key={i}
-                    onClick={() => setCurrent(current + (i - normIndex))}
+                    onClick={() => setCurrent(i)}
                     className={`rounded-full transition-all duration-400 ${
-                      i === normIndex ? 'w-7 h-2 bg-accent' : 'w-2 h-2 bg-white/25 hover:bg-white/50'
+                      i === current ? 'w-7 h-2 bg-accent' : 'w-2 h-2 bg-white/25 hover:bg-white/50'
                     }`}
                   />
                 ))}
