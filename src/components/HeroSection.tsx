@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, TouchEvent } from 'react';
+import { useState, useEffect, useRef, useCallback, TouchEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import OptimizedImage from '@/components/OptimizedImage';
 import heroBg from '@/assets/hero-bg.jpg';
 
@@ -40,23 +40,15 @@ const stats = [
   { value: '50+', label: 'Countries' },
 ];
 
-// Predefined scattered positions for 8 items in a boutique floating grid
-const GRID_POSITIONS = [
-  { x: '5%',  y: '2%',  size: 130, delay: 0 },
-  { x: '55%', y: '0%',  size: 120, delay: 0.4 },
-  { x: '28%', y: '8%',  size: 155, delay: 0.2 },
-  { x: '72%', y: '15%', size: 115, delay: 0.6 },
-  { x: '0%',  y: '48%', size: 120, delay: 0.3 },
-  { x: '60%', y: '50%', size: 140, delay: 0.1 },
-  { x: '22%', y: '60%', size: 110, delay: 0.5 },
-  { x: '78%', y: '58%', size: 125, delay: 0.7 },
-];
+const SPEED = 3500;
 
 const HeroSection = () => {
   const { t, lang } = useLanguage();
   const { get } = useSiteSettings();
   const navigate = useNavigate();
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [current, setCurrent] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartX = useRef(0);
   const touchDelta = useRef(0);
   const isFirstLoad = !hasAnimated;
@@ -98,17 +90,28 @@ const HeroSection = () => {
       }))
     : fallbackItems;
 
+  const len = carouselItems.length;
+  const next = useCallback(() => setCurrent(i => (i + 1) % len), [len]);
+  const prev = useCallback(() => setCurrent(i => (i - 1 + len) % len), [len]);
+
+  useEffect(() => {
+    if (paused) return;
+    timerRef.current = setInterval(next, SPEED);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [next, paused]);
 
   const onTouchStart = (e: TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchDelta.current = 0;
+    setPaused(true);
   };
   const onTouchMove = (e: TouchEvent) => {
     touchDelta.current = e.touches[0].clientX - touchStartX.current;
   };
   const onTouchEnd = () => {
-    // swipe navigates to catalog
-    if (Math.abs(touchDelta.current) > 60) navigate('/catalog');
+    if (touchDelta.current > 50) prev();
+    else if (touchDelta.current < -50) next();
+    setPaused(false);
   };
 
   return (
@@ -187,81 +190,97 @@ const HeroSection = () => {
             </div>
           </div>
 
-          {/* Right — Floating Grid */}
+          {/* Right — Film Strip */}
           <div
-            className="relative touch-pan-y"
-            style={{ ...anim('0.4s'), minHeight: 420 }}
+            className="relative flex flex-col items-center justify-center touch-pan-y"
+            style={anim('0.4s')}
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
-            {/* Ambient glow */}
-            <div className="absolute inset-0 rounded-full bg-accent/6 blur-[100px] pointer-events-none" />
+            {/* Ambient glow behind active card */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-accent/10 blur-[80px] pointer-events-none" />
 
-            {/* Floating product cards */}
-            <div className="relative w-full" style={{ height: 420 }}>
-              {carouselItems.slice(0, 8).map((item, i) => {
-                const pos = GRID_POSITIONS[i];
-                const isHovered = hoveredIdx === i;
-                const isFaded = hoveredIdx !== null && !isHovered;
+            {/* Large Active Card */}
+            <div className="relative w-full flex justify-center mb-6">
+              <div
+                className="relative rounded-2xl overflow-hidden bg-white shadow-[0_20px_70px_-15px_hsl(var(--sm-gold)/0.4)] ring-2 ring-accent/20 cursor-pointer transition-all duration-500"
+                style={{ width: 300, minHeight: 280 }}
+                onClick={() => {
+                  const item = carouselItems[current];
+                  if (item?.id) navigate(`/product/${item.id}`);
+                  else navigate('/catalog');
+                }}
+              >
+                <div className="p-4 flex items-center justify-center" style={{ height: 260 }}>
+                  <OptimizedImage
+                    src={carouselItems[current]?.img || ''}
+                    alt={carouselItems[current]?.label || ''}
+                    className="w-full h-full object-contain transition-opacity duration-500"
+                    sizes="300px"
+                    priority
+                    blurPlaceholder={false}
+                  />
+                </div>
+                <div className="absolute bottom-0 inset-x-0 h-14 bg-gradient-to-t from-accent/10 to-transparent pointer-events-none" />
+              </div>
 
-                return (
-                  <div
-                    key={i}
-                    className="absolute cursor-pointer"
-                    style={{
-                      left: pos.x,
-                      top: pos.y,
-                      width: pos.size,
-                      zIndex: isHovered ? 30 : 10,
-                      transition: 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease, filter 0.4s ease, box-shadow 0.4s ease',
-                      transform: isHovered
-                        ? 'scale(1.25) translateY(-12px)'
-                        : `translateY(${Math.sin(Date.now() / 1000 + i) * 0}px)`,
-                      opacity: isFaded ? 0.35 : 1,
-                      filter: isFaded ? 'blur(2px)' : 'none',
-                      animation: `heroFloat ${3 + (i % 3)}s ${pos.delay}s ease-in-out infinite`,
-                    }}
-                    onMouseEnter={() => setHoveredIdx(i)}
-                    onMouseLeave={() => setHoveredIdx(null)}
-                    onClick={() => {
-                      if (item.id) navigate(`/product/${item.id}`);
-                      else navigate('/catalog');
-                    }}
-                  >
-                    <div
-                      className={`rounded-2xl overflow-hidden bg-white transition-shadow duration-500 ${
-                        isHovered
-                          ? 'shadow-[0_20px_60px_-10px_hsl(var(--sm-gold)/0.45)] ring-2 ring-accent/30'
-                          : 'shadow-lg shadow-black/20 ring-1 ring-white/10'
-                      }`}
-                    >
-                      <div className="p-2 flex items-center justify-center" style={{ height: pos.size * 0.85 }}>
-                        <OptimizedImage
-                          src={item.img}
-                          alt={item.label}
-                          className="w-full h-full object-contain"
-                          sizes={`${pos.size}px`}
-                          priority={i < 4}
-                          blurPlaceholder={false}
-                        />
-                      </div>
-                    </div>
+              {/* Nav arrows */}
+              <button
+                onClick={prev}
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-white/15 bg-white/5 backdrop-blur-md flex items-center justify-center text-white/60 hover:text-white hover:border-accent/40 hover:bg-accent/10 transition-all duration-300 z-20"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={next}
+                className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-white/15 bg-white/5 backdrop-blur-md flex items-center justify-center text-white/60 hover:text-white hover:border-accent/40 hover:bg-accent/10 transition-all duration-300 z-20"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
 
-                    {/* Label on hover */}
-                    <div
-                      className={`absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap transition-all duration-400 ${
-                        isHovered
-                          ? 'bg-accent text-accent-foreground opacity-100 translate-y-0 shadow-md shadow-accent/20'
-                          : 'opacity-0 translate-y-2'
-                      }`}
-                      style={{ fontFamily: 'DM Sans, sans-serif' }}
-                    >
-                      {item.label}
-                    </div>
-                  </div>
-                );
-              })}
+            {/* Active label */}
+            <div
+              className="text-sm font-semibold px-5 py-1.5 mb-5 rounded-full bg-accent text-accent-foreground shadow-lg shadow-accent/25 transition-all duration-300"
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
+            >
+              {carouselItems[current]?.label}
+            </div>
+
+            {/* Thumbnail strip */}
+            <div className="flex items-center gap-2 overflow-x-auto max-w-full pb-2 scrollbar-hide">
+              {carouselItems.map((item, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrent(i)}
+                  className={`relative flex-shrink-0 rounded-lg overflow-hidden bg-white transition-all duration-400 ${
+                    i === current
+                      ? 'ring-2 ring-accent shadow-lg shadow-accent/20 scale-110'
+                      : 'ring-1 ring-white/10 opacity-50 hover:opacity-80 hover:ring-white/30'
+                  }`}
+                  style={{ width: 56, height: 56 }}
+                >
+                  <OptimizedImage
+                    src={item.img}
+                    alt={item.label}
+                    className="w-full h-full object-contain p-1"
+                    sizes="56px"
+                    blurPlaceholder={false}
+                  />
+                </button>
+              ))}
+
+              {/* Pause/Play */}
+              <button
+                onClick={() => setPaused(p => !p)}
+                className="flex-shrink-0 w-9 h-9 rounded-full border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center text-white/40 hover:text-white/70 transition-all duration-300 ml-1"
+                title={paused ? 'Play' : 'Pause'}
+              >
+                {paused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+              </button>
             </div>
           </div>
         </div>
