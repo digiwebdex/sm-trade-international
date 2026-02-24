@@ -363,12 +363,13 @@ const ProductDetail = () => {
 
             <div className="h-px bg-border/50" />
 
-            {/* ─── Color Variant Grid (Amazon-style with images & prices) ─── */}
+            {/* ─── Color Family (Daraz-style) ─── */}
             {uniqueColors.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 <div className="text-sm">
-                  <span className="text-muted-foreground">{lang === 'en' ? 'Colour' : 'রঙ'}: </span>
-                  <span className="font-semibold text-foreground">{selectedColor?.toUpperCase() || uniqueColors[0]?.color_name?.toUpperCase()}</span>
+                  <span className="text-muted-foreground">{lang === 'en' ? 'Color Family' : 'রঙের ধরন'}</span>
+                  {' '}
+                  <span className="font-semibold text-foreground">{selectedColor || uniqueColors[0]?.color_name || ''}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {uniqueColors.map(v => {
@@ -378,24 +379,19 @@ const ProductDetail = () => {
                         key={v.color_name}
                         onClick={() => handleColorSelect(v.color_name!)}
                         className={cn(
-                          'w-[70px] rounded-lg border-2 overflow-hidden transition-all p-1',
+                          'w-[42px] h-[42px] rounded border-2 overflow-hidden transition-all',
                           isActive
-                            ? 'border-[hsl(var(--sm-gold))] shadow-md'
-                            : 'border-border/40 hover:border-border',
+                            ? 'border-accent shadow-sm'
+                            : 'border-border/40 hover:border-accent/60',
                         )}
                       >
                         {v.image_url ? (
-                          <img src={v.image_url} alt={v.color_name ?? ''} className="w-full aspect-square object-contain rounded" />
+                          <img src={v.image_url} alt={v.color_name ?? ''} className="w-full h-full object-cover" />
                         ) : (
                           <div
-                            className="w-full aspect-square rounded"
+                            className="w-full h-full"
                             style={{ backgroundColor: v.color_hex ?? '#ccc' }}
                           />
-                        )}
-                        {v.unit_price && (
-                          <div className="text-[10px] text-center mt-1 font-medium text-foreground">
-                            ৳{Number(v.unit_price).toFixed(0)}
-                          </div>
                         )}
                       </button>
                     );
