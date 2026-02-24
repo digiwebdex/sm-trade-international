@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, TouchEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
@@ -50,6 +50,8 @@ const HeroSection = () => {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const touchStartX = useRef(0);
+  const touchDelta = useRef(0);
   const isFirstLoad = !hasAnimated;
 
   useEffect(() => {
@@ -115,6 +117,20 @@ const HeroSection = () => {
     const rotY = offset * 30;
     const scale = abs === 0 ? 1 : abs === 1 ? 0.75 : 0.55;
     return { tX, tZ, rotY, scale };
+  };
+
+  const onTouchStart = (e: TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchDelta.current = 0;
+    setPaused(true);
+  };
+  const onTouchMove = (e: TouchEvent) => {
+    touchDelta.current = e.touches[0].clientX - touchStartX.current;
+  };
+  const onTouchEnd = () => {
+    if (touchDelta.current > 40) prev();
+    else if (touchDelta.current < -40) next();
+    setPaused(false);
   };
 
   const handleProductClick = (item: typeof carouselItems[0], index: number) => {
@@ -207,10 +223,13 @@ const HeroSection = () => {
 
           {/* Right — Smooth 3D Carousel */}
           <div
-            className="relative flex flex-col items-center justify-center"
+            className="relative flex flex-col items-center justify-center touch-pan-y"
             style={{ ...anim('0.4s'), perspective: '1200px' }}
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
           >
             {/* Ambient glow */}
             <div className="absolute inset-8 rounded-full bg-primary/10 blur-[80px] pointer-events-none" />
