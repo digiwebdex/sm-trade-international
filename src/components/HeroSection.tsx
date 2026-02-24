@@ -194,70 +194,73 @@ const HeroSection = () => {
             </div>
           </div>
 
-          {/* Right — 3D Cube Carousel */}
+          {/* Right — Smooth 3D Carousel */}
           <div
             className="relative flex flex-col items-center justify-center"
-            style={anim('0.4s')}
+            style={{ ...anim('0.4s'), perspective: '1200px' }}
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
           >
-            <div className="absolute inset-12 rounded-full bg-accent/15 blur-3xl pointer-events-none" />
+            {/* Ambient glow */}
+            <div className="absolute inset-8 rounded-full bg-primary/10 blur-[80px] pointer-events-none" />
 
-            {/* 3D Carousel Stage */}
-            <div className="relative w-full py-8">
-              <div className="relative flex items-center justify-center" style={{ height: 320 }}>
+            {/* Carousel Stage */}
+            <div className="relative w-full" style={{ height: 380 }}>
+              <div className="relative flex items-center justify-center h-full" style={{ transformStyle: 'preserve-3d' }}>
                 {carouselItems.map((item, i) => {
                   const offset = getOffset(i);
                   const absOff = Math.abs(offset);
                   if (absOff > 2) return null;
 
-                  // Full 3D cube transforms
-                  const tX = offset * 180;
-                  const scale = absOff === 0 ? 1.12 : absOff === 1 ? 0.85 : 0.62;
-                  const opacity = absOff === 0 ? 1 : absOff === 1 ? 0.75 : 0.4;
+                  // Smoother 3D transforms
+                  const tX = offset * 200;
+                  const scale = absOff === 0 ? 1 : absOff === 1 ? 0.78 : 0.58;
+                  const opacity = absOff === 0 ? 1 : absOff === 1 ? 0.6 : 0.25;
                   const zIndex = 10 - absOff;
-                  const rotY = offset * 35;
-                  const tZ = absOff === 0 ? 0 : absOff === 1 ? -60 : -130;
+                  const rotY = offset * 25;
+                  const tZ = absOff === 0 ? 60 : absOff === 1 ? -40 : -120;
+                  const blur = absOff >= 2 ? 2 : 0;
 
                   return (
                     <div
                       key={i}
-                      className="absolute flex flex-col items-center"
+                      className="absolute flex flex-col items-center will-change-transform"
                       style={{
-                        transform: `perspective(900px) translateX(${tX}px) translateZ(${tZ}px) rotateY(${rotY}deg) scale(${scale})`,
+                        transform: `translateX(${tX}px) translateZ(${tZ}px) rotateY(${rotY}deg) scale(${scale})`,
                         opacity,
                         zIndex,
-                        transition: 'all 0.7s cubic-bezier(0.25,0.46,0.45,0.94)',
+                        filter: blur ? `blur(${blur}px)` : 'none',
+                        transition: 'transform 0.6s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.5s ease, filter 0.5s ease',
                         pointerEvents: absOff <= 1 ? 'auto' : 'none',
                       }}
                     >
                       <div
-                        className={`relative rounded-2xl border overflow-hidden cursor-pointer transition-all duration-500 ${
+                        className={`relative overflow-hidden cursor-pointer transition-shadow duration-500 ${
                           absOff === 0
-                            ? 'border-[hsl(var(--sm-gold))]/40 shadow-2xl shadow-[hsl(var(--sm-gold))]/20 ring-2 ring-[hsl(var(--sm-gold))]/20'
-                            : 'border-white/10 shadow-lg'
+                            ? 'rounded-3xl border-2 border-[hsl(var(--sm-gold))]/30 shadow-[0_8px_60px_-12px_hsl(var(--sm-gold)/0.35)] ring-1 ring-[hsl(var(--sm-gold))]/15'
+                            : 'rounded-2xl border border-white/10 shadow-xl'
                         }`}
-                        style={{ width: absOff === 0 ? 220 : 180 }}
+                        style={{ width: absOff === 0 ? 260 : 200 }}
                         onClick={() => handleProductClick(item, i)}
                       >
-                        <div className="bg-white p-3 flex items-center justify-center" style={{ minHeight: 192 }}>
+                        <div className="bg-white p-4 flex items-center justify-center" style={{ minHeight: absOff === 0 ? 240 : 200 }}>
                           <OptimizedImage
                             src={item.img}
                             alt={item.label}
-                            className="w-full h-48 object-contain"
-                            sizes="220px"
+                            className="w-full object-contain"
+                            style={{ height: absOff === 0 ? 210 : 170, minWidth: '60%' }}
+                            sizes="260px"
                             priority={absOff <= 1}
                             blurPlaceholder={false}
-                            style={{ minWidth: '60%', minHeight: '60%' }}
                           />
                         </div>
                       </div>
-                      {/* Label pill — only visible on active card */}
+                      {/* Label pill */}
                       <div
-                        className={`mt-3 text-xs font-semibold px-4 py-1.5 rounded-full whitespace-nowrap transition-all duration-500 ${
+                        className={`mt-4 text-sm font-semibold px-5 py-2 rounded-full whitespace-nowrap transition-all duration-500 ${
                           absOff === 0
-                            ? 'bg-[hsl(var(--sm-gold))] text-white opacity-100 translate-y-0'
-                            : 'bg-transparent text-white/30 opacity-0 translate-y-2'
+                            ? 'bg-[hsl(var(--sm-gold))] text-white opacity-100 translate-y-0 shadow-lg shadow-[hsl(var(--sm-gold))]/30'
+                            : 'bg-transparent text-white/30 opacity-0 translate-y-3'
                         }`}
                         style={{ fontFamily: 'DM Sans, sans-serif' }}
                       >
@@ -269,25 +272,25 @@ const HeroSection = () => {
               </div>
             </div>
 
-            {/* Reflection */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-8 bg-[hsl(var(--sm-gold))]/10 blur-2xl rounded-full" />
+            {/* Soft reflection */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-2/3 h-12 bg-[hsl(var(--sm-gold))]/8 blur-3xl rounded-full" />
 
             {/* Carousel controls */}
-            <div className="flex items-center gap-6 mt-2 relative z-30">
+            <div className="flex items-center gap-6 mt-0 relative z-30">
               <button
                 onClick={prev}
-                className="w-11 h-11 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:border-[hsl(var(--sm-gold))]/50 hover:bg-[hsl(var(--sm-gold))]/10 transition-all duration-300"
+                className="w-11 h-11 rounded-full border border-white/15 bg-white/5 backdrop-blur-md flex items-center justify-center text-white/50 hover:text-white hover:border-[hsl(var(--sm-gold))]/40 hover:bg-[hsl(var(--sm-gold))]/10 transition-all duration-300"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
 
-              <div className="flex gap-1.5">
+              <div className="flex gap-2">
                 {carouselItems.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrent(i)}
-                    className={`rounded-full transition-all duration-400 ${
-                      i === current ? 'w-7 h-2 bg-[hsl(var(--sm-gold))]' : 'w-2 h-2 bg-white/25 hover:bg-white/50'
+                    className={`rounded-full transition-all duration-500 ease-out ${
+                      i === current ? 'w-8 h-2.5 bg-[hsl(var(--sm-gold))]' : 'w-2.5 h-2.5 bg-white/20 hover:bg-white/40'
                     }`}
                   />
                 ))}
@@ -295,14 +298,14 @@ const HeroSection = () => {
 
               <button
                 onClick={next}
-                className="w-11 h-11 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:border-[hsl(var(--sm-gold))]/50 hover:bg-[hsl(var(--sm-gold))]/10 transition-all duration-300"
+                className="w-11 h-11 rounded-full border border-white/15 bg-white/5 backdrop-blur-md flex items-center justify-center text-white/50 hover:text-white hover:border-[hsl(var(--sm-gold))]/40 hover:bg-[hsl(var(--sm-gold))]/10 transition-all duration-300"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
 
               <button
                 onClick={() => setPaused(p => !p)}
-                className="w-9 h-9 rounded-full border border-white/15 bg-white/5 backdrop-blur-sm flex items-center justify-center text-white/40 hover:text-white/70 transition-all duration-300"
+                className="w-9 h-9 rounded-full border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center text-white/30 hover:text-white/60 transition-all duration-300"
                 title={paused ? 'Play' : 'Pause'}
               >
                 {paused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
