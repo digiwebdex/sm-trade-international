@@ -37,6 +37,9 @@ const defaultSettings: Record<string, SettingsMap> = {
     email: { en: '', bn: '' },
     address: { en: '', bn: '' },
     whatsapp_number: { en: '', bn: '' },
+    facebook: { en: '', bn: '' },
+    linkedin: { en: '', bn: '' },
+    instagram: { en: '', bn: '' },
   },
   seo: {
     page_title: { en: '', bn: '' },
