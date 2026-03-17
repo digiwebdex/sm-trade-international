@@ -303,38 +303,14 @@ const HeroSection = () => {
               {carouselItems[current]?.label}
             </div>
 
-            {/* Thumbnail strip */}
-            <div className="flex items-center gap-2 overflow-x-auto max-w-full pb-2 scrollbar-hide">
-              {carouselItems.map((item, i) => (
-                <button
-                  key={i}
-                  onClick={() => goTo(i)}
-                  className={`relative flex-shrink-0 rounded-lg overflow-hidden bg-white transition-all duration-400 ${
-                    i === current
-                      ? 'ring-2 ring-accent shadow-lg shadow-accent/20 scale-110'
-                      : 'ring-1 ring-white/10 opacity-50 hover:opacity-80 hover:ring-white/30'
-                  }`}
-                  style={{ width: 56, height: 56 }}
-                >
-                  <OptimizedImage
-                    src={item.img}
-                    alt={item.label}
-                    className="w-full h-full object-contain p-1"
-                    sizes="56px"
-                    blurPlaceholder={false}
-                  />
-                </button>
-              ))}
-
-              {/* Pause/Play */}
-              <button
-                onClick={() => setPaused(p => !p)}
-                className="flex-shrink-0 w-9 h-9 rounded-full border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center text-white/40 hover:text-white/70 transition-all duration-300 ml-1"
-                title={paused ? 'Play' : 'Pause'}
-              >
-                {paused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-              </button>
-            </div>
+            {/* Pause/Play */}
+            <button
+              onClick={() => setPaused(p => !p)}
+              className="w-9 h-9 rounded-full border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center text-white/40 hover:text-white/70 transition-all duration-300"
+              title={paused ? 'Play' : 'Pause'}
+            >
+              {paused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+            </button>
           </div>
           )}
         </div>
