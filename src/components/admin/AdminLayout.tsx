@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, Package, FolderOpen, Image, Users, Mail,
   Settings, LogOut, Menu, X, Upload, Home, Cog, Layers, SlidersHorizontal,
-  Search, ChevronDown, Tag, Globe, HardDrive, Info, Wand2
+  Search, ChevronDown, Tag, Globe, HardDrive, Info, Wand2, FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useRef, useEffect, useCallback } from 'react';
