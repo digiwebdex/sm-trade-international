@@ -22,6 +22,11 @@ const ARProductPreview = lazy(() => import("./pages/ARProductPreview"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const ProductGallery = lazy(() => import("./pages/ProductGallery"));
 
+// Minimal fallback – prevents the jarring full-screen spinner flash
+const PageFallback = () => (
+  <div className="min-h-[60vh]" />
+);
+
 // Lazy-load admin routes – they're never needed on the public site
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
@@ -76,28 +81,28 @@ const App = () => (
               <Route element={<PublicLayout />}>
                 <Route path="/" element={<Index />} />
                 <Route path="/catalog" element={
-                  <Suspense fallback={<AdminFallback />}><Catalog /></Suspense>
+                  <Suspense fallback={<PageFallback />}><Catalog /></Suspense>
                 } />
                 <Route path="/portfolio" element={
-                  <Suspense fallback={<AdminFallback />}><Portfolio /></Suspense>
+                  <Suspense fallback={<PageFallback />}><Portfolio /></Suspense>
                 } />
                 <Route path="/about" element={
-                  <Suspense fallback={<AdminFallback />}><About /></Suspense>
+                  <Suspense fallback={<PageFallback />}><About /></Suspense>
                 } />
                 <Route path="/gallery" element={
-                  <Suspense fallback={<AdminFallback />}><GalleryPage /></Suspense>
+                  <Suspense fallback={<PageFallback />}><GalleryPage /></Suspense>
                 } />
                 <Route path="/configurator" element={
-                  <Suspense fallback={<AdminFallback />}><GiftConfigurator /></Suspense>
+                  <Suspense fallback={<PageFallback />}><GiftConfigurator /></Suspense>
                 } />
                 <Route path="/3d-preview" element={
-                  <Suspense fallback={<AdminFallback />}><ARProductPreview /></Suspense>
+                  <Suspense fallback={<PageFallback />}><ARProductPreview /></Suspense>
                 } />
                 <Route path="/product/:id" element={
-                  <Suspense fallback={<AdminFallback />}><ProductDetail /></Suspense>
+                  <Suspense fallback={<PageFallback />}><ProductDetail /></Suspense>
                 } />
                 <Route path="/products" element={
-                  <Suspense fallback={<AdminFallback />}><ProductGallery /></Suspense>
+                  <Suspense fallback={<PageFallback />}><ProductGallery /></Suspense>
                 } />
               </Route>
               <Route path="/admin/login" element={
