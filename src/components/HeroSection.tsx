@@ -12,27 +12,6 @@ import heroBg from '@/assets/hero-bg.jpg';
 // Module-level flag: animations only play on first ever mount
 let hasAnimated = false;
 
-// Static fallback images
-import product3 from '@/assets/products/product-3.png';
-import tiesBlue from '@/assets/products/ties-blue.png';
-import glassware from '@/assets/products/glassware.png';
-import product8 from '@/assets/products/product-8.png';
-import product10 from '@/assets/products/product-10.png';
-import bpatcBuilding from '@/assets/products/bpatc-building.png';
-import tunnelSouvenir from '@/assets/products/tunnel-souvenir.png';
-import product9 from '@/assets/products/product-9.png';
-
-const fallbackItems = [
-  { img: product3, label: 'Crystal Awards', id: '' },
-  { img: tiesBlue, label: 'Premium Ties', id: '' },
-  { img: glassware, label: 'Custom Glassware', id: '' },
-  { img: product8, label: 'Gift Sets', id: '' },
-  { img: product10, label: 'Premium Souvenirs', id: '' },
-  { img: bpatcBuilding, label: 'Model Replicas', id: '' },
-  { img: tunnelSouvenir, label: 'Tunnel Souvenirs', id: '' },
-  { img: product9, label: 'Executive Pens', id: '' },
-];
-
 const stats = [
   { value: '500+', label: 'Clients' },
   { value: '10+', label: 'Years' },
@@ -68,7 +47,7 @@ const HeroSection = () => {
   const subtitle = get('hero', 'subtitle', t('hero.subtitle'));
   const ctaPrimary = get('hero', 'cta_primary', t('hero.cta'));
 
-  // Fetch featured products from DB
+  // Fetch all active products from DB — synced with product gallery
   const { data: dbProducts } = useQuery({
     queryKey: ['hero-products'],
     queryFn: async () => {
@@ -76,22 +55,20 @@ const HeroSection = () => {
         .from('products')
         .select('id, name_en, name_bn, image_url, product_code')
         .eq('is_active', true)
+        .not('image_url', 'is', null)
+        .neq('image_url', '')
         .order('sort_order');
       if (error) throw error;
       return data;
     },
     staleTime: 5 * 60 * 1000,
-    initialData: [],
-    placeholderData: (prev: any) => prev,
   });
 
-  const carouselItems = dbProducts && dbProducts.length >= 1
-    ? dbProducts.map(p => ({
-        img: p.image_url || '',
-        label: lang === 'en' ? p.name_en : (p.name_bn || p.name_en),
-        id: p.id,
-      }))
-    : fallbackItems;
+  const carouselItems = (dbProducts || []).map(p => ({
+    img: p.image_url || '',
+    label: lang === 'en' ? p.name_en : (p.name_bn || p.name_en),
+    id: p.id,
+  }));
 
   const len = carouselItems.length;
 
