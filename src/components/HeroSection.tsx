@@ -46,7 +46,6 @@ const HeroSection = () => {
     value: get('hero', `stat${n}_value`, n === 1 ? '500+' : n === 2 ? '10+' : n === 3 ? '1000+' : '50+'),
     label: get('hero', `stat${n}_label`, n === 1 ? 'Clients' : n === 2 ? 'Years' : n === 3 ? 'Products' : 'Countries'),
   }));
-  const ctaPrimary = get('hero', 'cta_primary', t('hero.cta'));
 
   // Fetch all active products from DB — synced with product gallery
   const { data: dbProducts } = useQuery({

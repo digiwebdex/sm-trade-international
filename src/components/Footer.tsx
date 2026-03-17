@@ -8,18 +8,27 @@ const Footer = () => {
   const { t } = useLanguage();
   const { get } = useSiteSettings();
 
+  const companyName = get('branding', 'company_name', 'S. M. Trade International');
+  const tagline = get('branding', 'tagline', 'Premium Corporate Gifts');
+  const creditText = get('branding', 'credit_text', 'Digitally Crafted by Digiwebdex.com');
+  const creditUrl = get('branding', 'credit_url', 'https://digiwebdex.com');
   const desc = get('footer', 'description', t('footer.desc'));
   const copyright = get('footer', 'copyright', t('footer.rights'));
   const phone = get('contact', 'phone', '+88 01867666888');
   const email = get('contact', 'email', 'smtrade.int94@gmail.com');
   const address = get('contact', 'address', t('contact.addressValue'));
 
+  const socials = [
+    { icon: Facebook, href: get('contact', 'facebook', ''), label: 'Facebook' },
+    { icon: Linkedin, href: get('contact', 'linkedin', ''), label: 'LinkedIn' },
+    { icon: Instagram, href: get('contact', 'instagram', ''), label: 'Instagram' },
+  ];
+  const activeSocials = socials.filter(s => s.href && s.href !== '#');
+
   return (
     <footer className="bg-primary text-primary-foreground relative overflow-hidden">
-      {/* Gold gradient separator at top */}
       <div className="h-1 bg-gradient-to-r from-transparent via-[hsl(var(--sm-gold))] to-transparent" />
 
-      {/* Subtle diamond pattern overlay */}
       <div className="absolute inset-0 opacity-[0.03]" style={{
         backgroundImage: 'repeating-linear-gradient(45deg, hsl(var(--sm-gold)) 0, hsl(var(--sm-gold)) 1px, transparent 0, transparent 50%)',
         backgroundSize: '24px 24px',
@@ -31,30 +40,21 @@ const Footer = () => {
             <div className="flex items-center gap-3 mb-5">
               <img src={logo} alt="Logo" className="h-11 rounded" />
               <div>
-                <span className="font-bold text-lg block" style={{ fontFamily: 'Montserrat, sans-serif' }}>S. M. Trade International</span>
+                <span className="font-bold text-lg block" style={{ fontFamily: 'Montserrat, sans-serif' }}>{companyName}</span>
                 <span className="text-primary-foreground/40 text-xs tracking-wider uppercase" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                  Premium Corporate Gifts
+                  {tagline}
                 </span>
               </div>
             </div>
             <p className="text-primary-foreground/50 text-sm leading-relaxed mb-6">{desc}</p>
             
-            {/* Social media icons */}
             <div className="flex items-center gap-3">
-              {[
-                { icon: Facebook, href: get('contact', 'facebook', '#'), label: 'Facebook' },
-                { icon: Linkedin, href: get('contact', 'linkedin', '#'), label: 'LinkedIn' },
-                { icon: Instagram, href: get('contact', 'instagram', '#'), label: 'Instagram' },
-              ].filter(s => s.href && s.href !== '#').length > 0 ? (
-                [
-                  { icon: Facebook, href: get('contact', 'facebook', '#'), label: 'Facebook' },
-                  { icon: Linkedin, href: get('contact', 'linkedin', '#'), label: 'LinkedIn' },
-                  { icon: Instagram, href: get('contact', 'instagram', '#'), label: 'Instagram' },
-                ].map((social, i) => (
+              {activeSocials.length > 0 ? (
+                activeSocials.map((social, i) => (
                   <a
                     key={i}
-                    href={social.href || '#'}
-                    target={social.href && social.href !== '#' ? '_blank' : undefined}
+                    href={social.href}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="w-9 h-9 rounded-lg bg-primary-foreground/5 border border-primary-foreground/10 flex items-center justify-center hover:bg-[hsl(var(--sm-gold))]/20 hover:border-[hsl(var(--sm-gold))]/40 transition-all duration-300"
                     title={social.label}
@@ -138,14 +138,17 @@ const Footer = () => {
 
         <div className="border-t border-primary-foreground/10 mt-10 pt-8 flex flex-col items-center gap-4">
           <span className="text-primary-foreground/35 text-sm">
-            © {new Date().getFullYear()} S. M. Trade International. {copyright}
+            © {new Date().getFullYear()} {companyName}. {copyright}
           </span>
-          <span className="text-primary-foreground/35 text-sm">
-            Digitally Crafted by{' '}
-            <a href="https://digiwebdex.com" target="_blank" rel="noopener noreferrer" className="hover:text-[hsl(var(--sm-gold))] transition-colors duration-300">
-              Digiwebdex.com
-            </a>
-          </span>
+          {creditText && (
+            <span className="text-primary-foreground/35 text-sm">
+              {creditUrl ? (
+                <a href={creditUrl} target="_blank" rel="noopener noreferrer" className="hover:text-[hsl(var(--sm-gold))] transition-colors duration-300">
+                  {creditText}
+                </a>
+              ) : creditText}
+            </span>
+          )}
         </div>
       </div>
     </footer>
