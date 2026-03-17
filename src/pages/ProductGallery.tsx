@@ -233,7 +233,8 @@ const ProductGallery = () => {
                         onMouseLeave={() => onVariantLeave(product.id)}
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/product/${product.product_code ? encodeURIComponent(product.product_code) : product.name_en.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || product.id}`);
+                          const slug = product.product_code ? encodeURIComponent(product.product_code) : product.name_en.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || product.id;
+                          navigate(`/product/${slug}?variant=${encodeURIComponent(v.variant_label_en)}`);
                         }}
                         className="w-6 h-6 rounded-full border-2 border-background overflow-hidden transition-transform hover:scale-125 hover:border-[hsl(var(--sm-gold))]"
                         title={v.variant_label_en}
