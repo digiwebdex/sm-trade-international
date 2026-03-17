@@ -9,7 +9,7 @@ const ServicesSection = lazy(() => import('@/components/ServicesSection'));
 const ProcessSection = lazy(() => import('@/components/ProcessSection'));
 const ProductsSection = lazy(() => import('@/components/ProductsSection'));
 const ClientsSection = lazy(() => import('@/components/ClientsSection'));
-const BulkOrderCalculator = lazy(() => import('@/components/BulkOrderCalculator'));
+
 const QuoteRequestForm = lazy(() => import('@/components/QuoteRequestForm'));
 const ContactSection = lazy(() => import('@/components/ContactSection'));
 
@@ -20,12 +20,12 @@ const sectionComponents: Record<string, React.ComponentType> = {
   process: ProcessSection,
   products: ProductsSection,
   clients: ClientsSection,
-  calculator: BulkOrderCalculator,
+  
   quote: QuoteRequestForm,
   contact: ContactSection,
 };
 
-const defaultOrder = ['hero', 'about', 'services', 'process', 'products', 'clients', 'calculator', 'quote', 'contact'];
+const defaultOrder = ['hero', 'about', 'services', 'process', 'products', 'clients', 'quote', 'contact'];
 
 const Index = () => {
   const { data: config } = useQuery({
