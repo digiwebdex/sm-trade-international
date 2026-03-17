@@ -42,18 +42,33 @@ const Footer = () => {
             {/* Social media icons */}
             <div className="flex items-center gap-3">
               {[
-                { icon: Facebook, href: '#' },
-                { icon: Linkedin, href: '#' },
-                { icon: Instagram, href: '#' },
-              ].map((social, i) => (
-                <a
-                  key={i}
-                  href={social.href}
-                  className="w-9 h-9 rounded-lg bg-primary-foreground/5 border border-primary-foreground/10 flex items-center justify-center hover:bg-[hsl(var(--sm-gold))]/20 hover:border-[hsl(var(--sm-gold))]/40 transition-all duration-300"
-                >
-                  <social.icon className="h-4 w-4 text-primary-foreground/50 hover:text-[hsl(var(--sm-gold))]" />
-                </a>
-              ))}
+                { icon: Facebook, href: get('contact', 'facebook', '#'), label: 'Facebook' },
+                { icon: Linkedin, href: get('contact', 'linkedin', '#'), label: 'LinkedIn' },
+                { icon: Instagram, href: get('contact', 'instagram', '#'), label: 'Instagram' },
+              ].filter(s => s.href && s.href !== '#').length > 0 ? (
+                [
+                  { icon: Facebook, href: get('contact', 'facebook', '#'), label: 'Facebook' },
+                  { icon: Linkedin, href: get('contact', 'linkedin', '#'), label: 'LinkedIn' },
+                  { icon: Instagram, href: get('contact', 'instagram', '#'), label: 'Instagram' },
+                ].map((social, i) => (
+                  <a
+                    key={i}
+                    href={social.href || '#'}
+                    target={social.href && social.href !== '#' ? '_blank' : undefined}
+                    rel="noopener noreferrer"
+                    className="w-9 h-9 rounded-lg bg-primary-foreground/5 border border-primary-foreground/10 flex items-center justify-center hover:bg-[hsl(var(--sm-gold))]/20 hover:border-[hsl(var(--sm-gold))]/40 transition-all duration-300"
+                    title={social.label}
+                  >
+                    <social.icon className="h-4 w-4 text-primary-foreground/50 hover:text-[hsl(var(--sm-gold))]" />
+                  </a>
+                ))
+              ) : (
+                [Facebook, Linkedin, Instagram].map((Icon, i) => (
+                  <span key={i} className="w-9 h-9 rounded-lg bg-primary-foreground/5 border border-primary-foreground/10 flex items-center justify-center">
+                    <Icon className="h-4 w-4 text-primary-foreground/30" />
+                  </span>
+                ))
+              )}
             </div>
           </div>
 
