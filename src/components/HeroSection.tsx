@@ -85,7 +85,7 @@ const HeroSection = () => {
     placeholderData: (prev: any) => prev,
   });
 
-  const carouselItems = dbProducts && dbProducts.length >= 4
+  const carouselItems = dbProducts && dbProducts.length >= 1
     ? dbProducts.map(p => ({
         img: p.image_url || '',
         label: lang === 'en' ? p.name_en : (p.name_bn || p.name_en),
