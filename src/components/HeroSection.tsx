@@ -175,7 +175,8 @@ const HeroSection = () => {
             </div>
           </div>
 
-          {/* Right — Film Strip */}
+          {/* Right — 3D Cube */}
+          {len > 0 && (
           <div
             className="relative flex flex-col items-center justify-center touch-pan-y"
             style={anim('0.4s')}
