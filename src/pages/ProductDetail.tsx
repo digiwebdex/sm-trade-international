@@ -72,6 +72,21 @@ const ProductDetail = () => {
     enabled: !!productId,
   });
 
+  const { data: variants = [] } = useQuery({
+    queryKey: ['product-variants', productId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('product_variants')
+        .select('*')
+        .eq('product_id', productId!)
+        .eq('is_active', true)
+        .order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!productId,
+  });
+
   const { data: relatedProducts = [] } = useQuery({
     queryKey: ['related-products', product?.category_id],
     queryFn: async () => {
