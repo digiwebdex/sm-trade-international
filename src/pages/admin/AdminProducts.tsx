@@ -154,6 +154,7 @@ interface StagedVariant {
   color_name: string;
   color_hex: string;
   stock: number;
+  unit_price: number;
   is_active: boolean;
   imageFile?: File;
   imageUrl?: string;
@@ -206,6 +207,7 @@ const InlineVariantManager = ({ staged, onStaged, productCode, productId }: Inli
       color_name: '',
       color_hex: '#000000',
       stock: 999,
+      unit_price: 0,
       is_active: true,
       sku_preview: generateSku(productCode, 'Design A', '#000000'),
     };
@@ -250,7 +252,7 @@ const InlineVariantManager = ({ staged, onStaged, productCode, productId }: Inli
       is_active: v.is_active,
       image_url: v.imageUrl || null,
       min_quantity: 1,
-      unit_price: 0,
+      unit_price: v.unit_price || 0,
       sort_order: liveVariants.length + 1,
     };
     const { error } = await supabase.from('product_variants').insert(payload as any);
@@ -277,7 +279,7 @@ const InlineVariantManager = ({ staged, onStaged, productCode, productId }: Inli
         </Button>
       </div>
 
-      {/* Live variants (edit mode) */}
+      {/* Live variants (edit mode) — with inline price editing */}
       {liveVariants.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Saved Variants</p>
@@ -295,6 +297,24 @@ const InlineVariantManager = ({ staged, onStaged, productCode, productId }: Inli
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium truncate">{lv.variant_label_en}</p>
                 {lv.sku && <p className="text-[10px] font-mono text-muted-foreground/60 truncate">{lv.sku}</p>}
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <span className="text-[10px] text-muted-foreground">৳</span>
+                <input
+                  type="number"
+                  min={0}
+                  defaultValue={Number(lv.unit_price) || 0}
+                  className="w-16 h-6 text-xs text-center border border-border/40 rounded bg-background px-1"
+                  onBlur={async (e) => {
+                    const newPrice = Math.max(0, Number(e.target.value));
+                    if (newPrice === Number(lv.unit_price)) return;
+                    const { error } = await supabase.from('product_variants').update({ unit_price: newPrice } as any).eq('id', lv.id);
+                    if (error) { toast({ title: 'Price update failed', description: error.message, variant: 'destructive' }); return; }
+                    toast({ title: 'Price updated' });
+                    queryClient.invalidateQueries({ queryKey: ['admin-variants', productId] });
+                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                />
               </div>
               <span className={cn('text-[10px] font-semibold shrink-0', lv.is_active ? 'text-green-600' : 'text-muted-foreground')}>
                 {lv.is_active ? 'Active' : 'Off'}
@@ -391,6 +411,19 @@ const InlineVariantManager = ({ staged, onStaged, productCode, productId }: Inli
                       <span className="w-7 h-7 rounded-md border shrink-0" style={{ backgroundColor: v.color_hex }} />
                     )}
                   </div>
+                </div>
+
+                {/* Price */}
+                <div>
+                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Price (৳)</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={v.unit_price}
+                    onChange={e => updateCard(v.id, { unit_price: Math.max(0, Number(e.target.value)) })}
+                    placeholder="0"
+                    className="h-8 text-xs mt-0.5"
+                  />
                 </div>
 
                 {/* Stock */}
