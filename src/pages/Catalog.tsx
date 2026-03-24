@@ -154,31 +154,7 @@ const Catalog = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch variant counts per product for showing swatch indicators
-  const { data: variantCounts = [] } = useQuery({
-    queryKey: ['catalog-variant-counts'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('product_variants')
-        .select('product_id, color_name, color_hex')
-        .eq('is_active', true);
-      if (error) throw error;
-      return data;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const variantsByProduct = useMemo(() => {
-    const map: Record<string, { color_name: string | null; color_hex: string | null }[]> = {};
-    variantCounts.forEach(v => {
-      if (!map[v.product_id]) map[v.product_id] = [];
-      // Deduplicate by color_name
-      if (v.color_name && !map[v.product_id].some(x => x.color_name === v.color_name)) {
-        map[v.product_id].push({ color_name: v.color_name, color_hex: v.color_hex });
-      }
-    });
-    return map;
-  }, [variantCounts]);
+  // No variant system — prices are on products directly
 
   const useDbData = dbProducts.length > 0;
 
