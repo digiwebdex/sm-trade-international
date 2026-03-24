@@ -747,6 +747,7 @@ const AdminProducts = () => {
       image_url: prod.image_url ?? '',
       is_active: prod.is_active,
       product_code: (prod as any).product_code ?? '',
+      base_price: 0,
     });
     setDialogOpen(true);
   };
