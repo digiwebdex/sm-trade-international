@@ -13,6 +13,7 @@ import { Plus, Pencil, Trash2, Upload, Image as ImageIcon, Search, ChevronLeft, 
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import BulkUploadZone, { type FileItem } from '@/components/admin/BulkUploadZone';
+import ColorVariantManager from '@/components/admin/ColorVariantManager';
 import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 12;
