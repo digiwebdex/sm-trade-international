@@ -348,20 +348,7 @@ const ProductDetail = () => {
             {/* Price section — Amazon style */}
             {unitPrice > 0 && (
               <div className="space-y-1">
-                {currentTier.discount > 0 && (
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-medium text-destructive">-{currentTier.discount}%</span>
-                    <span className="text-2xl font-medium text-foreground">৳{discountedPrice.toFixed(0)}</span>
-                  </div>
-                )}
-                {currentTier.discount === 0 && (
-                  <span className="text-2xl font-medium text-foreground">৳{unitPrice.toFixed(0)}</span>
-                )}
-                {currentTier.discount > 0 && (
-                  <div className="text-sm text-muted-foreground">
-                    M.R.P.: <span className="line-through">৳{unitPrice.toFixed(0)}</span>
-                  </div>
-                )}
+                <span className="text-2xl font-medium text-foreground">৳{unitPrice.toFixed(0)}</span>
                 <p className="text-xs text-muted-foreground">{lang === 'en' ? 'Inclusive of all taxes' : 'সকল কর সহ'}</p>
               </div>
             )}
