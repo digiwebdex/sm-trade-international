@@ -186,6 +186,7 @@ const Catalog = () => {
           categoryLabelBn: cat?.name_bn || cat?.name_en || '',
           features: [],
           productCode: p.product_code || undefined,
+          price: Number((p as any).unit_price) || 0,
         } as Product;
       });
     }
