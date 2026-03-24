@@ -236,13 +236,6 @@ const ProductDetail = () => {
 
             <div className="h-px bg-border/50" />
 
-            {/* Price */}
-            {unitPrice > 0 && (
-              <div className="space-y-1">
-                <span className="text-3xl font-bold text-foreground">৳{unitPrice.toLocaleString()}</span>
-                <p className="text-xs text-muted-foreground">{lang === 'en' ? 'Inclusive of all taxes' : 'সকল কর সহ'}</p>
-              </div>
-            )}
 
             {/* Product Code */}
             {(product as any).product_code && (
