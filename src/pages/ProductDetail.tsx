@@ -259,6 +259,11 @@ const ProductDetail = () => {
             {shortDesc && (
               <p className="text-sm text-muted-foreground">{shortDesc}</p>
             )}
+            {product.unit_price > 0 && (
+              <p className="text-2xl font-bold text-foreground">
+                ৳{product.unit_price.toLocaleString()}
+              </p>
+            )}
 
             {/* Color Variants */}
             {variants.length > 0 && (
