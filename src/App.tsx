@@ -46,7 +46,6 @@ const AdminHeroSlides = lazy(() => import("./pages/admin/AdminHeroSlides"));
 const AdminSEO = lazy(() => import("./pages/admin/AdminSEO"));
 const AdminBackup = lazy(() => import("./pages/admin/AdminBackup"));
 const AdminAbout = lazy(() => import("./pages/admin/AdminAbout"));
-const AdminVariantGenerator = lazy(() => import("./pages/admin/AdminVariantGenerator"));
 const AdminQuoteRequests = lazy(() => import("./pages/admin/AdminQuoteRequests"));
 const AdminFooter = lazy(() => import("./pages/admin/AdminFooter"));
 
@@ -130,7 +129,6 @@ const App = () => (
                 <Route path="seo" element={<Suspense fallback={<AdminFallback />}><AdminSEO /></Suspense>} />
                 <Route path="backup" element={<Suspense fallback={<AdminFallback />}><AdminBackup /></Suspense>} />
                 <Route path="about" element={<Suspense fallback={<AdminFallback />}><AdminAbout /></Suspense>} />
-                <Route path="variants" element={<Suspense fallback={<AdminFallback />}><AdminVariantGenerator /></Suspense>} />
                 <Route path="quotes" element={<Suspense fallback={<AdminFallback />}><AdminQuoteRequests /></Suspense>} />
                 <Route path="footer" element={<Suspense fallback={<AdminFallback />}><AdminFooter /></Suspense>} />
               </Route>
