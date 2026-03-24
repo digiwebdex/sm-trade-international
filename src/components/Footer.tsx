@@ -2,28 +2,80 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import logo from '@/assets/logo-sm.webp';
-import { Phone, Mail, MapPin, Facebook, Linkedin, Instagram } from 'lucide-react';
+import { Phone, Mail, MapPin, Facebook, Linkedin, Instagram, Twitter, Youtube, Globe } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/apiClient';
+
+const socialIconMap: Record<string, typeof Facebook> = {
+  facebook: Facebook,
+  linkedin: Linkedin,
+  instagram: Instagram,
+  twitter: Twitter,
+  youtube: Youtube,
+  website: Globe,
+};
 
 const Footer = () => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { get } = useSiteSettings();
 
   const companyName = get('branding', 'company_name', 'S. M. Trade International');
   const tagline = get('branding', 'tagline', 'Premium Corporate Gifts');
   const creditText = get('branding', 'credit_text', 'Digitally Crafted by Digiwebdex.com');
   const creditUrl = get('branding', 'credit_url', 'https://digiwebdex.com');
-  const desc = get('footer', 'description', t('footer.desc'));
-  const copyright = get('footer', 'copyright', t('footer.rights'));
   const phone = get('contact', 'phone', '+88 01867666888');
   const email = get('contact', 'email', 'smtrade.int94@gmail.com');
   const address = get('contact', 'address', t('contact.addressValue'));
 
-  const socials = [
-    { icon: Facebook, href: get('contact', 'facebook', ''), label: 'Facebook' },
-    { icon: Linkedin, href: get('contact', 'linkedin', ''), label: 'LinkedIn' },
-    { icon: Instagram, href: get('contact', 'instagram', ''), label: 'Instagram' },
+  // Footer texts with lang support
+  const desc = lang === 'bn'
+    ? get('footer', 'description_bn', get('footer', 'description', t('footer.desc')))
+    : get('footer', 'description_en', get('footer', 'description', t('footer.desc')));
+  const copyright = lang === 'bn'
+    ? get('footer', 'copyright_bn', get('footer', 'copyright', t('footer.rights')))
+    : get('footer', 'copyright_en', get('footer', 'copyright', t('footer.rights')));
+  const quicklinksTitle = lang === 'bn'
+    ? get('footer', 'quicklinks_title_bn', t('footer.quicklinks'))
+    : get('footer', 'quicklinks_title_en', t('footer.quicklinks'));
+  const contactTitle = lang === 'bn'
+    ? get('footer', 'contactinfo_title_bn', t('footer.contactinfo'))
+    : get('footer', 'contactinfo_title_en', t('footer.contactinfo'));
+
+  // Load dynamic quick links
+  const { data: allSettings } = useQuery({
+    queryKey: ['site-settings-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('site_settings').select('*');
+      if (error) throw error;
+      const map: Record<string, any> = {};
+      data?.forEach((row: any) => { map[row.setting_key] = row.setting_value; });
+      return map;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const dynamicLinks = allSettings?.footer_links as Array<{
+    label_en: string; label_bn: string; href: string; isRoute: boolean;
+  }> | undefined;
+
+  const quickLinks = dynamicLinks || [
+    { label_en: 'Home', label_bn: 'হোম', href: '/#home', isRoute: false },
+    { label_en: 'About', label_bn: 'সম্পর্কে', href: '/about', isRoute: true },
+    { label_en: 'Services', label_bn: 'সেবা', href: '/#services', isRoute: false },
+    { label_en: 'Products', label_bn: 'পণ্য', href: '/#products', isRoute: false },
+    { label_en: 'Contact', label_bn: 'যোগাযোগ', href: '/#contact', isRoute: false },
   ];
-  const activeSocials = socials.filter(s => s.href && s.href !== '#');
+
+  // Social links from contact settings
+  const contactSettings = allSettings?.contact as any;
+  const socialPlatforms = ['facebook', 'linkedin', 'instagram', 'twitter', 'youtube'];
+  const activeSocials = socialPlatforms
+    .map(p => ({
+      platform: p,
+      url: contactSettings?.[p] || get('contact', p, ''),
+      Icon: socialIconMap[p] || Globe,
+    }))
+    .filter(s => s.url && s.url !== '#' && s.url !== '');
 
   return (
     <footer className="bg-primary text-primary-foreground relative overflow-hidden">
@@ -53,13 +105,13 @@ const Footer = () => {
                 activeSocials.map((social, i) => (
                   <a
                     key={i}
-                    href={social.href}
+                    href={social.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-9 h-9 rounded-lg bg-primary-foreground/5 border border-primary-foreground/10 flex items-center justify-center hover:bg-[hsl(var(--sm-gold))]/20 hover:border-[hsl(var(--sm-gold))]/40 transition-all duration-300"
-                    title={social.label}
+                    title={social.platform}
                   >
-                    <social.icon className="h-4 w-4 text-primary-foreground/50 hover:text-[hsl(var(--sm-gold))]" />
+                    <social.Icon className="h-4 w-4 text-primary-foreground/50 hover:text-[hsl(var(--sm-gold))]" />
                   </a>
                 ))
               ) : (
@@ -73,42 +125,37 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-bold mb-5 text-lg" style={{ fontFamily: 'DM Sans, sans-serif' }}>{t('footer.quicklinks')}</h4>
+            <h4 className="font-bold mb-5 text-lg" style={{ fontFamily: 'DM Sans, sans-serif' }}>{quicklinksTitle}</h4>
             <div className="flex items-center gap-2 mb-4">
               <div className="h-px w-6 bg-[hsl(var(--sm-gold))]/40" />
               <div className="w-1.5 h-1.5 rotate-45 bg-[hsl(var(--sm-gold))]/50" />
             </div>
             <div className="space-y-3">
-              {[
-                { key: 'nav.home', href: '/#home' },
-                { key: 'nav.about', href: '/about', isRoute: true },
-                { key: 'nav.services', href: '/#services' },
-                { key: 'nav.products', href: '/#products' },
-                { key: 'nav.contact', href: '/#contact' },
-              ].map(item => (
-                item.isRoute ? (
+              {quickLinks.map((item, idx) => {
+                const label = lang === 'bn' && item.label_bn ? item.label_bn : item.label_en;
+                return item.isRoute ? (
                   <Link
-                    key={item.key}
+                    key={idx}
                     to={item.href}
                     className="block text-primary-foreground/50 hover:text-[hsl(var(--sm-gold))] text-sm transition-colors duration-300 hover:translate-x-1 transform"
                   >
-                    {t(item.key)}
+                    {label}
                   </Link>
                 ) : (
                   <a
-                    key={item.key}
+                    key={idx}
                     href={item.href}
                     className="block text-primary-foreground/50 hover:text-[hsl(var(--sm-gold))] text-sm transition-colors duration-300 hover:translate-x-1 transform"
                   >
-                    {t(item.key)}
+                    {label}
                   </a>
-                )
-              ))}
+                );
+              })}
             </div>
           </div>
 
           <div>
-            <h4 className="font-bold mb-5 text-lg" style={{ fontFamily: 'DM Sans, sans-serif' }}>{t('footer.contactinfo')}</h4>
+            <h4 className="font-bold mb-5 text-lg" style={{ fontFamily: 'DM Sans, sans-serif' }}>{contactTitle}</h4>
             <div className="flex items-center gap-2 mb-4">
               <div className="h-px w-6 bg-[hsl(var(--sm-gold))]/40" />
               <div className="w-1.5 h-1.5 rotate-45 bg-[hsl(var(--sm-gold))]/50" />

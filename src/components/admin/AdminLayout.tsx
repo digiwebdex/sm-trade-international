@@ -27,6 +27,7 @@ const navItems = [
   { label: 'Messages', icon: Mail, path: '/admin/messages' },
   { label: 'Quote Requests', icon: FileText, path: '/admin/quotes' },
   { label: 'SEO', icon: Globe, path: '/admin/seo' },
+  { label: 'Footer', icon: Layers, path: '/admin/footer' },
   { label: 'Site Settings', icon: Settings, path: '/admin/settings' },
   { label: 'Backup', icon: HardDrive, path: '/admin/backup' },
   { label: 'Import Data', icon: Upload, path: '/admin/import' },
