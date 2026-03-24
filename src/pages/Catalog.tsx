@@ -425,13 +425,6 @@ const Catalog = () => {
                               {lang === 'en' ? (p.categoryLabelEn || categories.find(c => c.id === p.category)?.labelEn || '') : (p.categoryLabelBn || categories.find(c => c.id === p.category)?.labelBn || '')}
                             </span>
                           </div>
-                          {price > 0 && (
-                            <div className="absolute bottom-3 right-3">
-                              <span className="bg-background/90 backdrop-blur-sm text-foreground text-sm font-bold px-3 py-1.5 rounded-full shadow-sm">
-                                ৳{price.toLocaleString()}
-                              </span>
-                            </div>
-                          )}
                         </div>
                         <div className="p-5">
                           <h3 className="text-base font-bold mb-1.5 group-hover:text-accent transition-colors line-clamp-1">{title(p)}</h3>
