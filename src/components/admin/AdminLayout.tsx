@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, Package, FolderOpen, Image, Users, Mail,
   Settings, LogOut, Menu, X, Upload, Home, Cog, Layers, SlidersHorizontal,
-  Search, ChevronDown, Tag, Globe, HardDrive, Info, Wand2, FileText
+  Search, ChevronDown, Tag, Globe, HardDrive, Info, FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -21,7 +21,6 @@ const navItems = [
   { label: 'Process', icon: Layers, path: '/admin/process' },
   { label: 'Products', icon: Package, path: '/admin/products' },
   { label: 'Categories', icon: FolderOpen, path: '/admin/categories' },
-  { label: 'Variants', icon: Wand2, path: '/admin/variants' },
   { label: 'Gallery', icon: Image, path: '/admin/gallery' },
   { label: 'Clients', icon: Users, path: '/admin/clients' },
   { label: 'Messages', icon: Mail, path: '/admin/messages' },
