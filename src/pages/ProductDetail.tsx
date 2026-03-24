@@ -278,7 +278,7 @@ const ProductDetail = () => {
                       type="button"
                       onClick={() => setSelectedVariantId(v.id === selectedVariantId ? null : v.id)}
                       className={cn(
-                        'relative w-16 h-16 rounded border-2 overflow-hidden transition-all bg-white',
+                        'relative w-[104px] h-[104px] rounded-lg border-2 overflow-hidden transition-all bg-white',
                         selectedVariantId === v.id
                           ? 'border-primary ring-1 ring-primary'
                           : 'border-border/50 hover:border-foreground/40'
