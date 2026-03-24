@@ -346,9 +346,6 @@ const ProductDetail = () => {
                     </div>
                     <div className="p-3">
                       <h3 className="font-semibold text-sm line-clamp-2">{rpTitle}</h3>
-                      {rpPrice > 0 && (
-                        <p className="text-sm font-bold text-foreground mt-1">৳{rpPrice.toLocaleString()}</p>
-                      )}
                       {rpCat && (
                         <span className="text-[10px] text-muted-foreground">
                           {lang === 'en' ? rpCat.name_en : (rpCat.name_bn || rpCat.name_en)}
