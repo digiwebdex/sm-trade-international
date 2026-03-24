@@ -672,7 +672,7 @@ const AdminProducts = () => {
               is_active: v.is_active,
               image_url: v.imageUrl || null,
               min_quantity: 1,
-              unit_price: 0,
+              unit_price: v.unit_price || form.base_price || 0,
               sort_order: idx + 1,
             }));
             await supabase.from('product_variants').insert(variantRows as any);
