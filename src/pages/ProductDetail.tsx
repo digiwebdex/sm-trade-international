@@ -105,8 +105,6 @@ const ProductDetail = () => {
     return result;
   }, [productImages, product]);
 
-  const unitPrice = Number((product as any)?.unit_price) || 0;
-  const totalPrice = unitPrice * quantity;
 
   const handleAddToQuote = () => {
     if (!product) return;
@@ -236,13 +234,6 @@ const ProductDetail = () => {
 
             <div className="h-px bg-border/50" />
 
-            {/* Price */}
-            {unitPrice > 0 && (
-              <div className="space-y-1">
-                <span className="text-3xl font-bold text-foreground">৳{unitPrice.toLocaleString()}</span>
-                <p className="text-xs text-muted-foreground">{lang === 'en' ? 'Inclusive of all taxes' : 'সকল কর সহ'}</p>
-              </div>
-            )}
 
             {/* Product Code */}
             {(product as any).product_code && (
@@ -285,11 +276,6 @@ const ProductDetail = () => {
 
             {/* Buy Box */}
             <div className="rounded-lg border border-border/50 p-4 space-y-3 bg-card">
-              {unitPrice > 0 && (
-                <div className="text-xl font-medium text-foreground">
-                  ৳{unitPrice.toLocaleString()}
-                </div>
-              )}
 
               <div className="text-lg font-medium text-green-600">
                 {lang === 'en' ? 'In stock' : 'স্টকে আছে'}
@@ -330,13 +316,6 @@ const ProductDetail = () => {
               </button>
             </div>
 
-            {/* Total price summary */}
-            {unitPrice > 0 && quantity > 1 && (
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{quantity} × ৳{unitPrice.toLocaleString()}</span>
-                <span className="font-bold text-lg text-foreground">৳{totalPrice.toLocaleString()}</span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -365,9 +344,6 @@ const ProductDetail = () => {
                     </div>
                     <div className="p-3">
                       <h3 className="font-semibold text-sm line-clamp-2">{rpTitle}</h3>
-                      {rpPrice > 0 && (
-                        <p className="text-sm font-bold text-foreground mt-1">৳{rpPrice.toLocaleString()}</p>
-                      )}
                       {rpCat && (
                         <span className="text-[10px] text-muted-foreground">
                           {lang === 'en' ? rpCat.name_en : (rpCat.name_bn || rpCat.name_en)}
