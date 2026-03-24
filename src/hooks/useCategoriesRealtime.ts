@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/apiClient';
 
 /**
  * Subscribes to Supabase Realtime changes on the `categories` table.

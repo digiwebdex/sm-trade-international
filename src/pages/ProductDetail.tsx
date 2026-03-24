@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/apiClient';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuoteBasket } from '@/contexts/QuoteBasketContext';
 import {

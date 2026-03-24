@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/apiClient';
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import {
   GripVertical, Eye, EyeOff, Pencil, Save, Loader2,
   Layout, Users, Cog, Layers, Package, Building2, FileText, Phone,
 } from 'lucide-react';
-import type { Json } from '@/integrations/supabase/types';
+type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 interface SectionConfig {
   id: string;

@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/apiClient';
 import { ZoomIn } from 'lucide-react';
 import OptimizedImage from '@/components/OptimizedImage';
 import GalleryLightbox from '@/components/gallery/GalleryLightbox';

@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/apiClient';
 import { Search, X, MessageCircle, ShoppingBag, Check, ArrowRight, Package } from 'lucide-react';
 import { useQuoteBasket } from '@/contexts/QuoteBasketContext';
 import { Input } from '@/components/ui/input';
