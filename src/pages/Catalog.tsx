@@ -39,6 +39,7 @@ interface Product {
   categoryLabelBn?: string;
   features?: string[];
   productCode?: string;
+  price?: number;
 }
 
 const staticProducts: Product[] = [
@@ -154,31 +155,7 @@ const Catalog = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch variant counts per product for showing swatch indicators
-  const { data: variantCounts = [] } = useQuery({
-    queryKey: ['catalog-variant-counts'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('product_variants')
-        .select('product_id, color_name, color_hex')
-        .eq('is_active', true);
-      if (error) throw error;
-      return data;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const variantsByProduct = useMemo(() => {
-    const map: Record<string, { color_name: string | null; color_hex: string | null }[]> = {};
-    variantCounts.forEach(v => {
-      if (!map[v.product_id]) map[v.product_id] = [];
-      // Deduplicate by color_name
-      if (v.color_name && !map[v.product_id].some(x => x.color_name === v.color_name)) {
-        map[v.product_id].push({ color_name: v.color_name, color_hex: v.color_hex });
-      }
-    });
-    return map;
-  }, [variantCounts]);
+  // No variant system — prices are on products directly
 
   const useDbData = dbProducts.length > 0;
 
@@ -209,6 +186,7 @@ const Catalog = () => {
           categoryLabelBn: cat?.name_bn || cat?.name_en || '',
           features: [],
           productCode: p.product_code || undefined,
+          price: Number((p as any).unit_price) || 0,
         } as Product;
       });
     }
@@ -418,9 +396,9 @@ const Catalog = () => {
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filtered.map((p, i) => {
                     const link = getProductLink(p);
-                    const colors = p.id ? variantsByProduct[p.id] || [] : [];
                     const CardWrapper = link ? Link : 'div';
                     const cardProps = link ? { to: link } : {};
+                    const price = (p as any).price || 0;
 
                     return (
                       <CardWrapper
@@ -447,21 +425,11 @@ const Catalog = () => {
                               {lang === 'en' ? (p.categoryLabelEn || categories.find(c => c.id === p.category)?.labelEn || '') : (p.categoryLabelBn || categories.find(c => c.id === p.category)?.labelBn || '')}
                             </span>
                           </div>
-                          {colors.length > 1 && (
-                            <div className="absolute bottom-3 right-3 flex gap-1">
-                              {colors.slice(0, 5).map((c, ci) => (
-                                <div
-                                  key={ci}
-                                  className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
-                                  style={{ backgroundColor: c.color_hex || '#ccc' }}
-                                  title={c.color_name || ''}
-                                />
-                              ))}
-                              {colors.length > 5 && (
-                                <div className="w-4 h-4 rounded-full bg-muted border-2 border-white shadow-sm flex items-center justify-center text-[8px] font-bold text-muted-foreground">
-                                  +{colors.length - 5}
-                                </div>
-                              )}
+                          {price > 0 && (
+                            <div className="absolute bottom-3 right-3">
+                              <span className="bg-background/90 backdrop-blur-sm text-foreground text-sm font-bold px-3 py-1.5 rounded-full shadow-sm">
+                                ৳{price.toLocaleString()}
+                              </span>
                             </div>
                           )}
                         </div>

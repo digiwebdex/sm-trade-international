@@ -1,44 +1,33 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/apiClient';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuoteBasket } from '@/contexts/QuoteBasketContext';
 import {
   ArrowLeft, ShoppingBag, MessageCircle, Share2,
-  ChevronRight, Minus, Plus, Package, CheckCircle2
+  ChevronRight, Minus, Plus, Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ProductImageGallery, { TypedImage } from '@/components/product/ProductImageGallery';
 import OptimizedImage from '@/components/OptimizedImage';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { isUUID, productSlug } from '@/lib/productSlug';
 
-
-
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { lang } = useLanguage();
   const { addItem } = useQuoteBasket();
-
-  const [selectedDesign, setSelectedDesign] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [hoveredColor, setHoveredColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
 
-  // ─── Data Fetching ───────────────────────────────────────────────────
   const { data: product, isLoading } = useQuery({
     queryKey: ['product-detail', id],
     queryFn: async () => {
       if (!id) return null;
-      // Support both UUID and slug (product_code or name-based) lookup
       if (isUUID(id)) {
         const { data, error } = await supabase
           .from('products')
@@ -48,14 +37,12 @@ const ProductDetail = () => {
         if (error) throw error;
         return data;
       }
-      // Try product_code first
       const { data: byCode } = await supabase
         .from('products')
         .select('*, categories(name_en, name_bn)')
         .eq('product_code', decodeURIComponent(id))
         .maybeSingle();
       if (byCode) return byCode;
-      // Fallback: fetch all and match slug
       const { data: all } = await supabase
         .from('products')
         .select('*, categories(name_en, name_bn)');
@@ -70,21 +57,6 @@ const ProductDetail = () => {
 
   const productId = product?.id;
 
-  const { data: variants = [] } = useQuery({
-    queryKey: ['product-variants', productId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('product_variants')
-        .select('*')
-        .eq('product_id', productId!)
-        .eq('is_active', true)
-        .order('sort_order');
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!productId,
-  });
-
   const { data: productImages = [] } = useQuery({
     queryKey: ['product-images', productId],
     queryFn: async () => {
@@ -92,7 +64,6 @@ const ProductDetail = () => {
         .from('product_images')
         .select('*')
         .eq('product_id', productId!)
-        .is('variant_id', null)
         .order('sort_order');
       if (error) throw error;
       return data;
@@ -116,57 +87,7 @@ const ProductDetail = () => {
     enabled: !!product?.category_id,
   });
 
-  // ─── Pre-select variant from URL param ─────────────────────────────
-  useEffect(() => {
-    if (!variants.length) return;
-    const variantParam = searchParams.get('variant');
-    if (variantParam && !selectedColor) {
-      const match = variants.find(v => v.variant_label_en === variantParam || v.color_name === variantParam);
-      if (match?.color_name) setSelectedColor(match.color_name);
-      if (match?.design_type) setSelectedDesign(match.design_type);
-    }
-  }, [variants, searchParams]);
-
-  // ─── Variant Logic ────────────────────────────────────────────────────
-  const uniqueDesigns = useMemo(() => {
-    const seen = new Set<string>();
-    return variants.filter(v => v.design_type && !seen.has(v.design_type) && seen.add(v.design_type));
-  }, [variants]);
-
-  const uniqueColors = useMemo(() => {
-    const seen = new Set<string>();
-    return variants.filter(v => v.color_name && !seen.has(v.color_name) && seen.add(v.color_name));
-  }, [variants]);
-
-  const effectiveColor = hoveredColor ?? selectedColor;
-
-  const activeVariant = useMemo(() => {
-    if (!variants.length) return null;
-    if (selectedDesign && effectiveColor) {
-      const match = variants.find(v => v.design_type === selectedDesign && v.color_name === effectiveColor);
-      if (match) return match;
-    }
-    if (selectedDesign) return variants.find(v => v.design_type === selectedDesign) ?? variants[0];
-    if (effectiveColor) return variants.find(v => v.color_name === effectiveColor) ?? variants[0];
-    return variants[0];
-  }, [variants, selectedDesign, effectiveColor]);
-
-  const { data: variantImages = [] } = useQuery({
-    queryKey: ['product-view-images', id, activeVariant?.id ?? null],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('product_images')
-        .select('*')
-        .eq('product_id', id!)
-        .eq('variant_id', activeVariant!.id)
-        .order('sort_order');
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!activeVariant?.id,
-  });
-
-  // ─── Build typed image list for gallery ───────────────────────────────
+  // Build gallery images
   const galleryImages = useMemo((): TypedImage[] => {
     const result: TypedImage[] = [];
     const seen = new Set<string>();
@@ -175,33 +96,17 @@ const ProductDetail = () => {
       seen.add(img.url);
       result.push(img);
     };
-
-    (variantImages as any[]).forEach(img => add({
-      id: img.id, url: img.image_url, image_type: img.image_type ?? 'main', variant_id: img.variant_id,
-    }));
     (productImages as any[]).forEach(img => add({
       id: img.id, url: img.image_url, image_type: img.image_type ?? 'main', variant_id: null,
     }));
-    if (activeVariant?.image_url) {
-      add({ url: activeVariant.image_url, image_type: 'main', variant_id: activeVariant.id });
-    }
     if (product?.image_url) {
       add({ url: product.image_url, image_type: 'main' });
     }
     return result;
-  }, [variantImages, productImages, activeVariant, product]);
+  }, [productImages, product]);
 
-  // ─── Pricing ──────────────────────────────────────────────────────────
-  const unitPrice = activeVariant?.unit_price ? Number(activeVariant.unit_price) : 0;
+  const unitPrice = Number((product as any)?.unit_price) || 0;
   const totalPrice = unitPrice * quantity;
-
-  // ─── Handlers ─────────────────────────────────────────────────────────
-  const handleDesignSelect = (design: string) => {
-    setSelectedDesign(design === selectedDesign ? null : design);
-  };
-  const handleColorSelect = (colorName: string) => {
-    setSelectedColor(colorName === selectedColor ? null : colorName);
-  };
 
   const handleAddToQuote = () => {
     if (!product) return;
@@ -218,9 +123,8 @@ const ProductDetail = () => {
 
   const handleWhatsApp = () => {
     if (!product) return;
-    const variantInfo = activeVariant ? ` (${activeVariant.variant_label_en})` : '';
     const msg = encodeURIComponent(
-      `Hi, I'm interested in: ${product.name_en}${variantInfo}, Qty: ${quantity}. Please share price & availability.`
+      `Hi, I'm interested in: ${product.name_en}, Qty: ${quantity}. Please share price & availability.`
     );
     window.open(`https://wa.me/8801867666888?text=${msg}`, '_blank');
   };
@@ -235,24 +139,17 @@ const ProductDetail = () => {
     }
   };
 
-  // ─── Loading / Not found ───────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background pt-4">
         <div className="container mx-auto px-4 max-w-7xl">
           <Skeleton className="h-4 w-48 mb-4" />
-          <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)] gap-6">
-            <div className="flex gap-3">
-              <div className="hidden sm:flex flex-col gap-2 w-14">
-                {[...Array(4)].map((_, i) => <Skeleton key={i} className="w-14 h-14 rounded" />)}
-              </div>
-              <Skeleton className="flex-1 aspect-square rounded-lg" />
-            </div>
+          <div className="grid lg:grid-cols-2 gap-8">
+            <Skeleton className="aspect-square rounded-lg" />
             <div className="space-y-4">
               <Skeleton className="h-7 w-3/4" />
               <Skeleton className="h-5 w-40" />
               <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-10 w-48" />
             </div>
           </div>
         </div>
@@ -276,159 +173,87 @@ const ProductDetail = () => {
   const cat = (product as any).categories;
   const title = lang === 'en' ? product.name_en : (product.name_bn || product.name_en);
   const desc = lang === 'en' ? (product.description_en ?? '') : (product.description_bn ?? product.description_en ?? '');
+  const shortDesc = lang === 'en'
+    ? ((product as any).short_description_en ?? '')
+    : ((product as any).short_description_bn ?? (product as any).short_description_en ?? '');
   const categoryLabel = cat ? (lang === 'en' ? cat.name_en : (cat.name_bn || cat.name_en)) : '';
-  const stock = activeVariant ? (activeVariant as any).stock ?? null : null;
 
   return (
     <div className="min-h-screen bg-background pt-2 pb-20">
       <div className="container mx-auto px-4 max-w-7xl">
 
-        {/* Back button + Breadcrumb */}
+        {/* Breadcrumb */}
         <div className="flex items-center gap-3 py-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
+          <button onClick={() => navigate(-1)}
+            className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-3.5 w-3.5" />
             {lang === 'en' ? 'Back' : 'ফিরুন'}
           </button>
           <span className="text-border">|</span>
           <nav className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
-          <Link to="/" className="hover:text-accent hover:underline transition-colors">{lang === 'en' ? 'Home' : 'হোম'}</Link>
-          <ChevronRight className="h-3 w-3" />
-          <Link to="/products" className="hover:text-accent hover:underline transition-colors">{lang === 'en' ? 'Products' : 'পণ্য'}</Link>
-          {categoryLabel && (
-            <>
-              <ChevronRight className="h-3 w-3" />
-              <Link to={`/catalog?category=${product.category_id}`} className="hover:text-accent hover:underline transition-colors">{categoryLabel}</Link>
-            </>
-          )}
-          <ChevronRight className="h-3 w-3" />
-          <span className="text-foreground truncate max-w-[200px]">{title}</span>
+            <Link to="/" className="hover:text-accent hover:underline transition-colors">{lang === 'en' ? 'Home' : 'হোম'}</Link>
+            <ChevronRight className="h-3 w-3" />
+            <Link to="/products" className="hover:text-accent hover:underline transition-colors">{lang === 'en' ? 'Products' : 'পণ্য'}</Link>
+            {categoryLabel && (
+              <>
+                <ChevronRight className="h-3 w-3" />
+                <Link to={`/catalog?category=${product.category_id}`} className="hover:text-accent hover:underline transition-colors">{categoryLabel}</Link>
+              </>
+            )}
+            <ChevronRight className="h-3 w-3" />
+            <span className="text-foreground truncate max-w-[200px]">{title}</span>
           </nav>
         </div>
 
-        {/* ─── Main 2-Column Layout (Amazon: image left, info right) ─── */}
-        <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)] gap-6 lg:gap-10 items-start">
+        {/* Main Layout */}
+        <div className="grid lg:grid-cols-2 gap-6 lg:gap-10 items-start">
 
-          {/* LEFT — Image gallery with vertical thumbnails */}
+          {/* LEFT — Image Gallery */}
           <div className="lg:sticky lg:top-20">
             <ProductImageGallery
               images={galleryImages}
-              selectedVariantId={activeVariant?.id ?? null}
+              selectedVariantId={null}
               title={title}
             />
           </div>
 
-          {/* RIGHT — Product Info (Amazon style) */}
-          <div className="flex flex-col gap-3">
-
-            {/* Title — large, Amazon-style */}
-            <h1 className="text-xl md:text-2xl font-normal text-foreground leading-snug">
+          {/* RIGHT — Product Info */}
+          <div className="flex flex-col gap-4">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground leading-snug">
               {title}
             </h1>
 
-            {/* Brand / Category link */}
             {categoryLabel && (
-              <Link
-                to={`/catalog?category=${product.category_id}`}
-                className="text-sm text-accent hover:text-accent/80 hover:underline w-fit"
-              >
+              <Link to={`/catalog?category=${product.category_id}`}
+                className="text-sm text-accent hover:text-accent/80 hover:underline w-fit">
                 {lang === 'en' ? `Visit the ${categoryLabel} Store` : `${categoryLabel} স্টোর দেখুন`}
               </Link>
             )}
 
+            {shortDesc && (
+              <p className="text-sm text-muted-foreground">{shortDesc}</p>
+            )}
+
             <div className="h-px bg-border/50" />
 
-            {/* Price section — Amazon style */}
+            {/* Price */}
             {unitPrice > 0 && (
               <div className="space-y-1">
-                <span className="text-2xl font-medium text-foreground">৳{unitPrice.toFixed(0)}</span>
+                <span className="text-3xl font-bold text-foreground">৳{unitPrice.toLocaleString()}</span>
                 <p className="text-xs text-muted-foreground">{lang === 'en' ? 'Inclusive of all taxes' : 'সকল কর সহ'}</p>
               </div>
             )}
 
-            {/* Product code / SKU */}
-            {((activeVariant as any)?.sku || (product as any).product_code) && (
+            {/* Product Code */}
+            {(product as any).product_code && (
               <div className="text-xs text-muted-foreground">
-                {lang === 'en' ? 'SKU' : 'পণ্য কোড'}: <span className="font-mono font-semibold text-foreground">{(activeVariant as any)?.sku || (product as any).product_code}</span>
+                {lang === 'en' ? 'Product Code' : 'পণ্য কোড'}: <span className="font-mono font-semibold text-foreground">{(product as any).product_code}</span>
               </div>
             )}
 
             <div className="h-px bg-border/50" />
 
-            {/* ─── Color Family (Daraz-style) ─── */}
-            {uniqueColors.length > 0 && (
-              <div className="space-y-3">
-                <div className="text-sm flex items-center gap-1.5">
-                  <span className="text-muted-foreground">{lang === 'en' ? 'Color Family' : 'রঙের ধরন'}:</span>
-                  <span className="font-semibold text-foreground">{effectiveColor || uniqueColors[0]?.color_name || ''}</span>
-                </div>
-                <div className="flex flex-wrap gap-2.5">
-                  {uniqueColors.map(v => {
-                    const isActive = selectedColor === v.color_name || (!selectedColor && v === uniqueColors[0]);
-                    return (
-                      <button
-                        key={v.color_name}
-                        onClick={() => handleColorSelect(v.color_name!)}
-                        onMouseEnter={() => setHoveredColor(v.color_name)}
-                        onMouseLeave={() => setHoveredColor(null)}
-                        title={v.color_name ?? ''}
-                        className={cn(
-                          'relative w-[96px] h-[96px] rounded-lg overflow-hidden transition-all duration-200',
-                          isActive
-                            ? 'ring-2 ring-accent ring-offset-2 ring-offset-background shadow-md scale-105'
-                            : 'border-2 border-border/40 hover:border-accent/60 hover:shadow-sm',
-                        )}
-                      >
-                        {v.image_url ? (
-                          <img src={v.image_url} alt={v.color_name ?? ''} className="w-full h-full object-cover" />
-                        ) : (
-                          <div
-                            className="w-full h-full"
-                            style={{ backgroundColor: v.color_hex ?? '#ccc' }}
-                          />
-                        )}
-                        {isActive && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                            <CheckCircle2 className="h-5 w-5 text-white drop-shadow-md" />
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* ─── Design Selector ─── */}
-            {uniqueDesigns.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-sm">
-                  <span className="text-muted-foreground">{lang === 'en' ? 'Design' : 'ডিজাইন'}: </span>
-                  <span className="font-semibold text-foreground">{selectedDesign || uniqueDesigns[0]?.design_type}</span>
-                </div>
-                <Select
-                  value={selectedDesign ?? ''}
-                  onValueChange={v => handleDesignSelect(v)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={lang === 'en' ? 'Select design…' : 'ডিজাইন বেছে নিন…'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {uniqueDesigns.map(v => (
-                      <SelectItem key={v.design_type!} value={v.design_type!}>
-                        {v.design_type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="h-px bg-border/50" />
-
-            {/* About this item / Description */}
+            {/* Description */}
             {desc && (
               <div className="space-y-2">
                 <h3 className="text-sm font-bold text-foreground">{lang === 'en' ? 'About this item' : 'এই পণ্য সম্পর্কে'}</h3>
@@ -458,78 +283,48 @@ const ProductDetail = () => {
 
             <div className="h-px bg-border/50" />
 
-            {/* ─── Buy Box (Amazon right sidebar style, inline here) ─── */}
+            {/* Buy Box */}
             <div className="rounded-lg border border-border/50 p-4 space-y-3 bg-card">
-              {/* Price in buy box */}
               {unitPrice > 0 && (
                 <div className="text-xl font-medium text-foreground">
-                  ৳{unitPrice.toFixed(0)}<span className="text-xs align-top text-muted-foreground ml-0.5">00</span>
+                  ৳{unitPrice.toLocaleString()}
                 </div>
               )}
 
-              {/* Stock */}
-              <div className={cn(
-                'text-lg font-medium',
-                stock === null || stock === undefined
-                  ? 'text-green-600'
-                  : stock > 0
-                    ? 'text-green-600'
-                    : 'text-destructive'
-              )}>
-                {stock === null || stock === undefined
-                  ? (lang === 'en' ? 'In stock' : 'স্টকে আছে')
-                  : stock > 0
-                    ? (lang === 'en' ? `In stock (${stock} left)` : `স্টকে আছে (${stock}টি বাকি)`)
-                    : (lang === 'en' ? 'Out of stock' : 'স্টক নেই')}
+              <div className="text-lg font-medium text-green-600">
+                {lang === 'en' ? 'In stock' : 'স্টকে আছে'}
               </div>
 
               {/* Quantity */}
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">{lang === 'en' ? 'Quantity' : 'পরিমাণ'}:</span>
                 <div className="flex items-center border border-border rounded-lg overflow-hidden">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-2.5 py-1.5 hover:bg-muted transition-colors border-r border-border"
-                  >
+                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-2.5 py-1.5 hover:bg-muted transition-colors border-r border-border">
                     <Minus className="h-3.5 w-3.5" />
                   </button>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={quantity}
+                  <Input type="number" min={1} value={quantity}
                     onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-14 text-center border-0 rounded-none h-8 focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm"
-                  />
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-2.5 py-1.5 hover:bg-muted transition-colors border-l border-border"
-                  >
+                    className="w-14 text-center border-0 rounded-none h-8 focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm" />
+                  <button onClick={() => setQuantity(quantity + 1)}
+                    className="px-2.5 py-1.5 hover:bg-muted transition-colors border-l border-border">
                     <Plus className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
 
-              {/* CTA Buttons — Amazon style stacked */}
-              <Button
-                onClick={handleAddToQuote}
-                className="w-full bg-[hsl(var(--sm-gold))] hover:bg-[hsl(var(--sm-gold))]/90 text-white gap-2 rounded-full h-10"
-              >
+              <Button onClick={handleAddToQuote}
+                className="w-full bg-[hsl(var(--sm-gold))] hover:bg-[hsl(var(--sm-gold))]/90 text-white gap-2 rounded-full h-10">
                 <ShoppingBag className="h-4 w-4" />
                 {lang === 'en' ? 'Add to Quote Basket' : 'কোটেশন বাস্কেটে যোগ করুন'}
               </Button>
-              <Button
-                onClick={handleWhatsApp}
-                className="w-full bg-[hsl(142,70%,40%)] hover:bg-[hsl(142,70%,35%)] text-white gap-2 rounded-full h-10"
-              >
+              <Button onClick={handleWhatsApp}
+                className="w-full bg-[hsl(142,70%,40%)] hover:bg-[hsl(142,70%,35%)] text-white gap-2 rounded-full h-10">
                 <MessageCircle className="h-4 w-4" />
                 {lang === 'en' ? 'Order via WhatsApp' : 'WhatsApp এ অর্ডার করুন'}
               </Button>
 
-              {/* Share */}
-              <button
-                onClick={handleShare}
-                className="flex items-center gap-1.5 text-xs text-accent hover:underline"
-              >
+              <button onClick={handleShare} className="flex items-center gap-1.5 text-xs text-accent hover:underline">
                 <Share2 className="h-3.5 w-3.5" />
                 {lang === 'en' ? 'Share' : 'শেয়ার'}
               </button>
@@ -538,8 +333,8 @@ const ProductDetail = () => {
             {/* Total price summary */}
             {unitPrice > 0 && quantity > 1 && (
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{quantity} × ৳{unitPrice.toFixed(0)}</span>
-                <span className="font-bold text-lg text-foreground">৳{totalPrice.toFixed(0)}</span>
+                <span>{quantity} × ৳{unitPrice.toLocaleString()}</span>
+                <span className="font-bold text-lg text-foreground">৳{totalPrice.toLocaleString()}</span>
               </div>
             )}
           </div>
@@ -555,27 +350,24 @@ const ProductDetail = () => {
               {relatedProducts.map((rp: any) => {
                 const rpCat = rp.categories;
                 const rpTitle = lang === 'en' ? rp.name_en : (rp.name_bn || rp.name_en);
+                const rpPrice = Number(rp.unit_price) || 0;
                 return (
-                  <Link
-                    key={rp.id}
-                    to={`/product/${productSlug(rp)}`}
-                    className="group rounded-lg overflow-hidden bg-background border border-border/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-                  >
+                  <Link key={rp.id} to={`/product/${productSlug(rp)}`}
+                    className="group rounded-lg overflow-hidden bg-background border border-border/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                     <div className="aspect-square overflow-hidden bg-white">
                       {rp.image_url ? (
-                        <OptimizedImage
-                          src={rp.image_url}
-                          alt={rpTitle}
+                        <OptimizedImage src={rp.image_url} alt={rpTitle}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          wrapperClassName="w-full h-full"
-                          sizes="(min-width: 768px) 25vw, 50vw"
-                        />
+                          wrapperClassName="w-full h-full" sizes="(min-width: 768px) 25vw, 50vw" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">{rpTitle}</div>
                       )}
                     </div>
                     <div className="p-3">
                       <h3 className="font-semibold text-sm line-clamp-2">{rpTitle}</h3>
+                      {rpPrice > 0 && (
+                        <p className="text-sm font-bold text-foreground mt-1">৳{rpPrice.toLocaleString()}</p>
+                      )}
                       {rpCat && (
                         <span className="text-[10px] text-muted-foreground">
                           {lang === 'en' ? rpCat.name_en : (rpCat.name_bn || rpCat.name_en)}

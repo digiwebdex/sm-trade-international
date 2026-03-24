@@ -369,6 +369,7 @@ export type Database = {
           short_description_bn: string | null
           short_description_en: string | null
           sort_order: number
+          unit_price: number
           updated_at: string
         }
         Insert: {
@@ -385,6 +386,7 @@ export type Database = {
           short_description_bn?: string | null
           short_description_en?: string | null
           sort_order?: number
+          unit_price?: number
           updated_at?: string
         }
         Update: {
@@ -401,6 +403,7 @@ export type Database = {
           short_description_bn?: string | null
           short_description_en?: string | null
           sort_order?: number
+          unit_price?: number
           updated_at?: string
         }
         Relationships: [
