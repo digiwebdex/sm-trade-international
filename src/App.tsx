@@ -49,6 +49,7 @@ const AdminAbout = lazy(() => import("./pages/admin/AdminAbout"));
 const AdminQuoteRequests = lazy(() => import("./pages/admin/AdminQuoteRequests"));
 const AdminFooter = lazy(() => import("./pages/admin/AdminFooter"));
 const AdminContactInfo = lazy(() => import("./pages/admin/AdminContactInfo"));
+const AdminMenuManager = lazy(() => import("./pages/admin/AdminMenuManager"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -133,6 +134,7 @@ const App = () => (
                 <Route path="quotes" element={<Suspense fallback={<AdminFallback />}><AdminQuoteRequests /></Suspense>} />
                 <Route path="footer" element={<Suspense fallback={<AdminFallback />}><AdminFooter /></Suspense>} />
                 <Route path="contact" element={<Suspense fallback={<AdminFallback />}><AdminContactInfo /></Suspense>} />
+                <Route path="menu" element={<Suspense fallback={<AdminFallback />}><AdminMenuManager /></Suspense>} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
