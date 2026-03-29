@@ -37,7 +37,7 @@ const QuoteBasketDrawer = () => {
       {totalItems > 0 && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-20 md:bottom-8 right-4 z-50 bg-accent text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:bg-accent/90 transition-all hover:scale-105 active:scale-95"
+          className="fixed top-1/2 -translate-y-1/2 right-4 z-50 bg-accent text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:bg-accent/90 transition-all hover:scale-105 active:scale-95"
           aria-label="Open quote basket"
         >
           <ShoppingBag className="h-6 w-6" />
