@@ -143,6 +143,7 @@ const ProductDetail = () => {
       titleBn: product.name_bn || '',
       src: displayImg,
       category: product.category_id || '',
+      quantity,
     });
     toast.success(lang === 'en' ? 'Added to quote basket' : 'কোটেশন বাস্কেটে যোগ হয়েছে');
   };
