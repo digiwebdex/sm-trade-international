@@ -105,7 +105,7 @@ const AdminFooter = () => {
         { platform: 'youtube', url: c.youtube || '', icon: 'youtube' },
       ].filter(s => s.url || ['facebook', 'linkedin', 'instagram'].includes(s.platform)));
     }
-    // Load footer texts
+    // Load footer texts + bg image
     if (settings.footer) {
       const f = settings.footer as any;
       setTexts(prev => ({
@@ -119,6 +119,7 @@ const AdminFooter = () => {
         contactinfo_title_en: f.contactinfo_title_en || prev.contactinfo_title_en,
         contactinfo_title_bn: f.contactinfo_title_bn || prev.contactinfo_title_bn,
       }));
+      if (f.bg_image) setBgImage(f.bg_image);
     }
   }, [settings]);
 
