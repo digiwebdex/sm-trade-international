@@ -8,7 +8,7 @@ import { supabase } from '@/lib/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Upload, Trash2, Loader2, ImageIcon, GripVertical, Plus, Camera, X, CheckCircle2 } from 'lucide-react';
+import { Upload, Trash2, Loader2, ImageIcon, GripVertical, Plus, Camera, X, CheckCircle2, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 
@@ -25,6 +25,8 @@ const IMAGE_VIEWS: { type: ImageType; label: string }[] = [
 interface ProductImageManagerProps {
   productId: string;
   variantId?: string | null;
+  featuredImageUrl?: string;
+  onSetFeatured?: (imageUrl: string) => void;
 }
 
 interface ProductImage {
@@ -46,7 +48,7 @@ interface UploadingFile {
   error?: string;
 }
 
-const ProductImageManager = ({ productId, variantId = null }: ProductImageManagerProps) => {
+const ProductImageManager = ({ productId, variantId = null, featuredImageUrl, onSetFeatured }: ProductImageManagerProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
