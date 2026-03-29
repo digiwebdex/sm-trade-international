@@ -261,7 +261,28 @@ class QueryBuilder {
       return { data, error: null };
     }
 
-    throw new Error('update() requires .eq("id", value) or .eq("setting_key", value)');
+    // Generic fallback: if there's any filter, fetch matching rows to get their ID, then update by ID
+    if (this._filters.length > 0) {
+      const selectBuilder = new QueryBuilder(this.table);
+      selectBuilder.select('*');
+      this._filters.forEach(f => {
+        if (f.op === 'eq') selectBuilder.eq(f.column, f.value);
+      });
+      const { data: rows } = await selectBuilder;
+      if (rows && rows.length > 0 && rows[0].id) {
+        const resp = await fetch(`${tableUrl(this.table)}/${rows[0].id}`, {
+          method: 'PATCH',
+          headers: getHeaders(),
+          body: JSON.stringify(this._payload),
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        const data = await resp.json();
+        return { data, error: null };
+      }
+      return { data: null, error: null };
+    }
+
+    throw new Error('update() requires at least one filter (e.g. .eq("id", value))');
   }
 
   private async _doDelete(): Promise<{ data: any; error: any }> {
