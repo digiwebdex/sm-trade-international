@@ -11,7 +11,7 @@ export interface BasketItem {
 
 interface QuoteBasketContextType {
   items: BasketItem[];
-  addItem: (item: Omit<BasketItem, 'quantity'>) => void;
+  addItem: (item: Omit<BasketItem, 'quantity'> & { quantity?: number }) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, qty: number) => void;
   clearBasket: () => void;
@@ -32,13 +32,14 @@ export const QuoteBasketProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<BasketItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
-  const addItem = useCallback((item: Omit<BasketItem, 'quantity'>) => {
+  const addItem = useCallback((item: Omit<BasketItem, 'quantity'> & { quantity?: number }) => {
+    const qty = item.quantity || 1;
     setItems(prev => {
       const existing = prev.find(i => i.id === item.id);
       if (existing) {
-        return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
+        return prev.map(i => i.id === item.id ? { ...i, quantity: qty } : i);
       }
-      return [...prev, { ...item, quantity: 1 }];
+      return [...prev, { ...item, quantity: qty }];
     });
   }, []);
 
