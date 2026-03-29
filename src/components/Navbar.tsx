@@ -360,15 +360,26 @@ const Navbar = () => {
       {mobileOpen && (
         <div className="md:hidden bg-background/95 backdrop-blur-lg border-t border-border/50 px-4 pb-4">
           {allLinks.map(l =>
-            (l as any).isRoute ? (
+            l.type === 'route' ? (
               <Link
                 key={l.key}
                 to={l.href}
                 onClick={() => setMobileOpen(false)}
                 className="block py-3 font-medium text-sm hover:text-primary transition-colors border-b border-border/30 last:border-0"
               >
-                {t(l.key)}
+                {lang === 'en' ? l.label_en : l.label_bn}
               </Link>
+            ) : l.type === 'external' ? (
+              <a
+                key={l.key}
+                href={l.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMobileOpen(false)}
+                className="block py-3 font-medium text-sm hover:text-primary transition-colors border-b border-border/30 last:border-0"
+              >
+                {lang === 'en' ? l.label_en : l.label_bn}
+              </a>
             ) : (
               <a
                 key={l.key}
@@ -376,7 +387,7 @@ const Navbar = () => {
                 onClick={() => setMobileOpen(false)}
                 className="block py-3 font-medium text-sm hover:text-primary transition-colors border-b border-border/30 last:border-0"
               >
-                {t(l.key)}
+                {lang === 'en' ? l.label_en : l.label_bn}
               </a>
             )
           )}
