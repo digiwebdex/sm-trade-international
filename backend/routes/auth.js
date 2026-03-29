@@ -13,7 +13,11 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password required' });
     }
 
-    const { rows } = await pool.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase().trim()]);
+    const normalizedEmail = email.toLowerCase().trim();
+    const { rows } = await pool.query(
+      'SELECT * FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1',
+      [normalizedEmail]
+    );
     if (rows.length === 0) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
