@@ -425,30 +425,61 @@ const AdminProducts = () => {
                   </div>
                 </div>
 
-                {/* Product Image */}
-                <div>
-                  <label className="text-sm font-medium">Product Image</label>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden"
-                    onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
-                  {form.image_url ? (
-                    <div className="relative mt-2">
-                      <img src={form.image_url} alt="Preview" className="w-full h-40 object-contain rounded-lg border bg-white p-2" />
-                      <div className="absolute bottom-2 right-2 flex gap-1.5">
-                        <Button type="button" size="sm" variant="secondary" onClick={() => fileRef.current?.click()}>Change</Button>
-                        <Button type="button" size="sm" variant="secondary" onClick={() => setForm(f => ({ ...f, image_url: '' }))}>
-                          <X className="h-3 w-3" />
+                {/* Product Image — simple upload for new, full manager for edit */}
+                {editId ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Product Images</label>
+                      {form.image_url && (
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <Star className="h-3 w-3 text-[hsl(var(--sm-gold))] fill-[hsl(var(--sm-gold))]" /> Featured image set
+                        </span>
+                      )}
+                    </div>
+                    {/* Featured image preview */}
+                    {form.image_url && (
+                      <div className="relative">
+                        <img src={form.image_url} alt="Featured" className="w-full h-32 object-contain rounded-lg border bg-white p-2" />
+                        <div className="absolute top-2 left-2 bg-[hsl(var(--sm-gold))]/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-current" /> Featured
+                        </div>
+                        <Button type="button" size="sm" variant="secondary" className="absolute bottom-2 right-2"
+                          onClick={() => setForm(f => ({ ...f, image_url: '' }))}>
+                          <X className="h-3 w-3 mr-1" /> Remove Featured
                         </Button>
                       </div>
-                    </div>
-                  ) : (
-                    <Button type="button" variant="outline" className="w-full mt-2 h-32 flex-col gap-2"
-                      onClick={() => fileRef.current?.click()} disabled={uploading}>
-                      {uploading ? <span className="text-sm">Uploading...</span> : (
-                        <><Upload className="h-6 w-6 text-muted-foreground" /><span className="text-sm text-muted-foreground">Click to upload (max 5MB)</span></>
-                      )}
-                    </Button>
-                  )}
-                </div>
+                    )}
+                    <ProductImageManager
+                      productId={editId}
+                      featuredImageUrl={form.image_url}
+                      onSetFeatured={(url) => setForm(f => ({ ...f, image_url: url }))}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-sm font-medium">Product Image</label>
+                    <input ref={fileRef} type="file" accept="image/*" className="hidden"
+                      onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
+                    {form.image_url ? (
+                      <div className="relative mt-2">
+                        <img src={form.image_url} alt="Preview" className="w-full h-40 object-contain rounded-lg border bg-white p-2" />
+                        <div className="absolute bottom-2 right-2 flex gap-1.5">
+                          <Button type="button" size="sm" variant="secondary" onClick={() => fileRef.current?.click()}>Change</Button>
+                          <Button type="button" size="sm" variant="secondary" onClick={() => setForm(f => ({ ...f, image_url: '' }))}>
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button type="button" variant="outline" className="w-full mt-2 h-32 flex-col gap-2"
+                        onClick={() => fileRef.current?.click()} disabled={uploading}>
+                        {uploading ? <span className="text-sm">Uploading...</span> : (
+                          <><Upload className="h-6 w-6 text-muted-foreground" /><span className="text-sm text-muted-foreground">Click to upload (max 5MB)</span></>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                )}
 
                 {/* Color Variants (only show when editing existing product) */}
                 {editId && (
