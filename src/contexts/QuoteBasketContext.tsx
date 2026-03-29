@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 
 export interface BasketItem {
   id: string;
@@ -20,6 +20,15 @@ interface QuoteBasketContextType {
   setIsOpen: (open: boolean) => void;
 }
 
+const STORAGE_KEY = 'quote-basket-items';
+
+const loadItems = (): BasketItem[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+};
+
 const QuoteBasketContext = createContext<QuoteBasketContextType | null>(null);
 
 export const useQuoteBasket = () => {
@@ -29,8 +38,12 @@ export const useQuoteBasket = () => {
 };
 
 export const QuoteBasketProvider = ({ children }: { children: ReactNode }) => {
-  const [items, setItems] = useState<BasketItem[]>([]);
+  const [items, setItems] = useState<BasketItem[]>(loadItems);
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }, [items]);
 
   const addItem = useCallback((item: Omit<BasketItem, 'quantity'> & { quantity?: number }) => {
     const qty = item.quantity || 1;
