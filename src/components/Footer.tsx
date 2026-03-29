@@ -77,9 +77,22 @@ const Footer = () => {
     }))
     .filter(s => s.url && s.url !== '#' && s.url !== '');
 
+  const footerBgImage = get('footer', 'bg_image', '/images/footer-bg.jpg');
+
   return (
-    <footer className="bg-primary text-primary-foreground relative overflow-hidden">
+    <footer className="text-primary-foreground relative overflow-hidden">
       <div className="h-1 bg-gradient-to-r from-transparent via-[hsl(var(--sm-gold))] to-transparent" />
+
+      {/* Background image with dark overlay */}
+      <div className="absolute inset-0">
+        <img
+          src={footerBgImage}
+          alt=""
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-primary/85" />
+      </div>
 
       <div className="absolute inset-0 opacity-[0.03]" style={{
         backgroundImage: 'repeating-linear-gradient(45deg, hsl(var(--sm-gold)) 0, hsl(var(--sm-gold)) 1px, transparent 0, transparent 50%)',
