@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/apiClient';
@@ -24,6 +24,12 @@ const ProductDetail = () => {
   const { addItem } = useQuoteBasket();
   const [quantity, setQuantity] = useState(1);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+
+  // Reset quantity and variant when navigating to a different product
+  useEffect(() => {
+    setQuantity(1);
+    setSelectedVariantId(null);
+  }, [id]);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product-detail', id],
