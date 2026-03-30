@@ -376,6 +376,21 @@ const ProductDetail = () => {
                 </div>
               </div>
 
+              {/* Total Calculator */}
+              {unitPrice > 0 && (
+                <div className="flex items-center justify-between bg-muted/50 rounded-lg px-4 py-2.5">
+                  <span className="text-sm text-muted-foreground">
+                    {lang === 'en' ? 'Total' : 'মোট'}:
+                  </span>
+                  <span className="text-lg font-bold text-foreground">
+                    ৳{totalPrice.toLocaleString()}
+                    <span className="text-xs font-normal text-muted-foreground ml-1.5">
+                      (৳{unitPrice.toLocaleString()} × {quantity.toLocaleString()})
+                    </span>
+                  </span>
+                </div>
+              )}
+
               <Button onClick={handleAddToQuote}
                 className="w-full bg-[hsl(var(--sm-gold))] hover:bg-[hsl(var(--sm-gold))]/90 text-white gap-2 rounded-full h-10">
                 <ShoppingBag className="h-4 w-4" />
