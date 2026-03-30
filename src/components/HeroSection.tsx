@@ -23,10 +23,13 @@ const HeroSection = () => {
   const { get } = useSiteSettings();
   const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
+  const [prevIdx, setPrevIdx] = useState(0);
+  const [rotating, setRotating] = useState(false);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartX = useRef(0);
   const touchDelta = useRef(0);
+  const directionRef = useRef<'next' | 'prev'>('next');
   const isFirstLoad = !hasAnimated;
 
   useEffect(() => {
