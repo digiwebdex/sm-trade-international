@@ -459,7 +459,11 @@ const AdminProducts = () => {
                   <div>
                     <label className="text-sm font-medium">Product Image</label>
                     <input ref={fileRef} type="file" accept="image/*" className="hidden"
-                      onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(file);
+                        e.currentTarget.value = '';
+                      }} />
                     {form.image_url ? (
                       <div className="relative mt-2">
                         <img src={form.image_url} alt="Preview" className="w-full h-40 object-contain rounded-lg border bg-white p-2" />

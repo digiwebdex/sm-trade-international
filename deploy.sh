@@ -11,6 +11,13 @@ if [ -f backend/.env ]; then
   echo "💾 Backend .env backed up"
 fi
 
+# Preserve uploaded files before reset (git reset removes untracked uploads)
+if [ -d backend/uploads ]; then
+  rm -rf /tmp/smtrade-backend-uploads.bak
+  cp -a backend/uploads /tmp/smtrade-backend-uploads.bak
+  echo "💾 Backend uploads backed up"
+fi
+
 echo "📥 Fetching latest code..."
 git fetch origin
 
@@ -21,6 +28,13 @@ git reset --hard origin/main
 if [ -f /tmp/smtrade-backend-env.bak ]; then
   cp /tmp/smtrade-backend-env.bak backend/.env
   echo "✅ Backend .env restored"
+fi
+
+# Restore uploads after reset
+if [ -d /tmp/smtrade-backend-uploads.bak ]; then
+  rm -rf backend/uploads
+  cp -a /tmp/smtrade-backend-uploads.bak backend/uploads
+  echo "✅ Backend uploads restored"
 fi
 
 echo "🔨 Building frontend..."

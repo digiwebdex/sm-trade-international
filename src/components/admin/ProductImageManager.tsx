@@ -528,7 +528,10 @@ const ProductImageManager = ({ productId, variantId = null, featuredImageUrl, on
                   accept="image/*"
                   multiple
                   className="hidden"
-                  onChange={e => { if (e.target.files) handleMultiUpload(e.target.files); }}
+                  onChange={e => {
+                    if (e.target.files) handleMultiUpload(e.target.files);
+                    e.currentTarget.value = '';
+                  }}
                 />
               </label>
             </div>

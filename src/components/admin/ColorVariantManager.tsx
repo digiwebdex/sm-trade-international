@@ -131,10 +131,12 @@ const ColorVariantManager = ({ productId, basePrice }: Props) => {
 
       <input ref={fileRef} type="file" accept="image/*" className="hidden"
         onChange={e => {
-          if (e.target.files?.[0] && activeVariantIdx !== null) {
+          const file = e.target.files?.[0];
+          if (file && activeVariantIdx !== null) {
             const v = variants[activeVariantIdx];
-            if (v) handleImageUpload(e.target.files[0], v.id, activeVariantIdx);
+            if (v) handleImageUpload(file, v.id, activeVariantIdx);
           }
+          e.currentTarget.value = '';
         }} />
 
       <div className="space-y-2">
