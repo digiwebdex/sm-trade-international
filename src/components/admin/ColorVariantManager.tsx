@@ -92,14 +92,15 @@ const ColorVariantManager = ({ productId, basePrice }: Props) => {
     setUploadingIdx(idx);
     const ext = file.name.split('.').pop();
     const path = `products/variant-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('cms-images').upload(path, file);
+    const { data: uploadData, error } = await supabase.storage.from('cms-images').upload(path, file);
     if (error) {
       toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
       setUploadingIdx(null);
       return;
     }
-    const { data: urlData } = supabase.storage.from('cms-images').getPublicUrl(path);
-    await saveMutation.mutateAsync({ id: variantId, image_url: urlData.publicUrl });
+    // Use the publicUrl returned by the upload endpoint (multer generates a random filename)
+    const publicUrl = uploadData?.publicUrl || supabase.storage.from('cms-images').getPublicUrl(path).data.publicUrl;
+    await saveMutation.mutateAsync({ id: variantId, image_url: publicUrl });
     setUploadingIdx(null);
   };
 

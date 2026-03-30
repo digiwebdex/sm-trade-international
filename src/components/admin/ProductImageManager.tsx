@@ -163,11 +163,12 @@ const ProductImageManager = ({ productId, variantId = null, featuredImageUrl, on
       const scope = variantId ? `variant-${variantId}` : `product-${productId}`;
       const path = `product-views/${scope}/${imageType}-${Date.now()}.webp`;
 
-      const { error: uploadErr } = await supabase.storage.from('cms-images').upload(path, uploadBlob);
+      const { data: uploadData, error: uploadErr } = await supabase.storage.from('cms-images').upload(path, uploadBlob);
       if (uploadErr) throw uploadErr;
       updateUploadingFile(uploadId, { progress: 80 });
 
-      const { data: urlData } = supabase.storage.from('cms-images').getPublicUrl(path);
+      // Use the publicUrl returned by the upload endpoint (multer generates a random filename)
+      const publicUrl = uploadData?.publicUrl || supabase.storage.from('cms-images').getPublicUrl(path).data.publicUrl;
 
       // For view types (not gallery), remove existing image of same type
       if (imageType !== 'gallery') {
@@ -180,7 +181,7 @@ const ProductImageManager = ({ productId, variantId = null, featuredImageUrl, on
       const insertPayload: any = {
         product_id: productId,
         variant_id: variantId,
-        image_url: urlData.publicUrl,
+        image_url: publicUrl,
         image_type: imageType,
         sort_order: imageType === 'gallery'
           ? galleryImages.length + 10
