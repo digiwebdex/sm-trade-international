@@ -15,18 +15,21 @@ let hasAnimated = false;
 // Stats are now fetched from site settings
 
 const SPEED = 3500;
-const CUBE_SIZE = 280;
-
+const CUBE_SIZE = 300;
+const HALF = CUBE_SIZE / 2;
 
 const HeroSection = () => {
   const { t, lang } = useLanguage();
   const { get } = useSiteSettings();
   const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
+  const [prevIdx, setPrevIdx] = useState(0);
+  const [rotating, setRotating] = useState(false);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartX = useRef(0);
   const touchDelta = useRef(0);
+  const directionRef = useRef<'next' | 'prev'>('next');
   const isFirstLoad = !hasAnimated;
 
   useEffect(() => {
@@ -70,13 +73,17 @@ const HeroSection = () => {
 
   const len = carouselItems.length;
 
-  const goTo = useCallback((idx: number) => {
-    if (idx === current) return;
+  const goTo = useCallback((idx: number, dir: 'next' | 'prev' = 'next') => {
+    if (idx === current || rotating) return;
+    directionRef.current = dir;
+    setPrevIdx(current);
+    setRotating(true);
     setCurrent(idx);
-  }, [current]);
+    setTimeout(() => setRotating(false), 700);
+  }, [current, rotating]);
 
-  const next = useCallback(() => goTo((current + 1) % len), [goTo, current, len]);
-  const prev = useCallback(() => goTo((current - 1 + len) % len), [goTo, current, len]);
+  const next = useCallback(() => goTo((current + 1) % len, 'next'), [goTo, current, len]);
+  const prev = useCallback(() => goTo((current - 1 + len) % len, 'prev'), [goTo, current, len]);
 
   useEffect(() => {
     if (paused) return;
@@ -181,59 +188,88 @@ const HeroSection = () => {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-accent/15 blur-[100px] pointer-events-none" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[45%] w-48 h-48 rounded-full bg-primary/20 blur-[60px] pointer-events-none" />
 
-            {/* Smooth crossfade carousel */}
+            {/* 3D Cube Carousel */}
             <div className="relative w-full flex justify-center mb-8">
               <div
-                className="relative"
-                style={{ width: 320, height: CUBE_SIZE + 20 }}
+                style={{
+                  width: CUBE_SIZE + 20,
+                  height: CUBE_SIZE + 20,
+                  perspective: '800px',
+                }}
               >
-                {carouselItems.map((item, i) => (
-                  <div
-                    key={item.id || i}
-                    className="absolute inset-0 rounded-3xl overflow-hidden cursor-pointer"
-                    style={{
-                      opacity: i === current ? 1 : 0,
-                      transform: i === current ? 'scale(1)' : 'scale(0.95)',
-                      transition: 'opacity 0.6s ease-in-out, transform 0.6s ease-in-out',
-                      pointerEvents: i === current ? 'auto' : 'none',
-                      background: 'linear-gradient(145deg, #ffffff 0%, #f8f6f3 100%)',
-                      boxShadow: '0 25px 80px -20px hsl(var(--sm-gold) / 0.35), 0 10px 30px -10px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.8)',
-                      border: '1.5px solid hsl(var(--sm-gold) / 0.25)',
-                      willChange: 'opacity, transform',
-                    }}
-                    onClick={() => {
-                      if (item?.id) navigate(`/product/${item.id}`);
-                      else navigate('/catalog');
-                    }}
-                  >
-                    {/* Decorative corner accents */}
-                    <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-accent/30 rounded-tl-xl" />
-                    <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-accent/30 rounded-tr-xl" />
-                    <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-accent/30 rounded-bl-xl" />
-                    <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-accent/30 rounded-br-xl" />
-
-                    <div className="p-6 flex items-center justify-center h-full">
-                      <OptimizedImage
-                        src={item.img}
-                        alt={item.label}
-                        className="w-full h-full object-contain drop-shadow-lg"
-                        sizes="320px"
-                        priority={i < 3}
-                        blurPlaceholder={false}
-                      />
-                    </div>
-                    <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-accent/8 to-transparent pointer-events-none" />
-                  </div>
-                ))}
-
-                {/* Reflection / shadow below */}
                 <div
-                  className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[70%] h-8 rounded-full pointer-events-none"
                   style={{
-                    background: 'radial-gradient(ellipse, hsl(var(--sm-gold) / 0.2) 0%, transparent 70%)',
-                    filter: 'blur(8px)',
+                    width: '100%',
+                    height: '100%',
+                    position: 'relative',
+                    transformStyle: 'preserve-3d',
+                    transition: rotating ? 'transform 0.7s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+                    transform: rotating
+                      ? directionRef.current === 'next'
+                        ? `translateZ(-${HALF}px) rotateY(-90deg)`
+                        : `translateZ(-${HALF}px) rotateY(90deg)`
+                      : `translateZ(-${HALF}px) rotateY(0deg)`,
                   }}
-                />
+                >
+                  {/* Front face — current (or previous during rotation) */}
+                  {[rotating ? prevIdx : current].map(idx => {
+                    const item = carouselItems[idx];
+                    if (!item) return null;
+                    return (
+                      <div
+                        key={`front-${idx}`}
+                        className="absolute inset-0 rounded-3xl overflow-hidden cursor-pointer backface-hidden"
+                        style={{
+                          transform: `rotateY(0deg) translateZ(${HALF}px)`,
+                          background: 'linear-gradient(145deg, #ffffff 0%, #f8f6f3 100%)',
+                          boxShadow: '0 25px 80px -20px hsl(var(--sm-gold) / 0.35), 0 10px 30px -10px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.8)',
+                          border: '1.5px solid hsl(var(--sm-gold) / 0.25)',
+                          backfaceVisibility: 'hidden',
+                        }}
+                        onClick={() => item.id ? navigate(`/product/${item.id}`) : navigate('/catalog')}
+                      >
+                        <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-accent/30 rounded-tl-xl" />
+                        <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-accent/30 rounded-tr-xl" />
+                        <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-accent/30 rounded-bl-xl" />
+                        <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-accent/30 rounded-br-xl" />
+                        <div className="p-6 flex items-center justify-center h-full">
+                          <OptimizedImage src={item.img} alt={item.label} className="w-full h-full object-contain drop-shadow-lg" sizes="320px" priority={idx < 3} blurPlaceholder={false} />
+                        </div>
+                        <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-accent/8 to-transparent pointer-events-none" />
+                      </div>
+                    );
+                  })}
+
+                  {/* Target face — appears on rotation */}
+                  {rotating && (() => {
+                    const item = carouselItems[current];
+                    if (!item) return null;
+                    const faceRotate = directionRef.current === 'next' ? 'rotateY(90deg)' : 'rotateY(-90deg)';
+                    return (
+                      <div
+                        key={`target-${current}`}
+                        className="absolute inset-0 rounded-3xl overflow-hidden cursor-pointer"
+                        style={{
+                          transform: `${faceRotate} translateZ(${HALF}px)`,
+                          background: 'linear-gradient(145deg, #ffffff 0%, #f8f6f3 100%)',
+                          boxShadow: '0 25px 80px -20px hsl(var(--sm-gold) / 0.35), 0 10px 30px -10px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.8)',
+                          border: '1.5px solid hsl(var(--sm-gold) / 0.25)',
+                          backfaceVisibility: 'hidden',
+                        }}
+                        onClick={() => item.id ? navigate(`/product/${item.id}`) : navigate('/catalog')}
+                      >
+                        <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-accent/30 rounded-tl-xl" />
+                        <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-accent/30 rounded-tr-xl" />
+                        <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-accent/30 rounded-bl-xl" />
+                        <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-accent/30 rounded-br-xl" />
+                        <div className="p-6 flex items-center justify-center h-full">
+                          <OptimizedImage src={item.img} alt={item.label} className="w-full h-full object-contain drop-shadow-lg" sizes="320px" priority blurPlaceholder={false} />
+                        </div>
+                        <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-accent/8 to-transparent pointer-events-none" />
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
 
               {/* Nav arrows — refined */}
@@ -273,7 +309,7 @@ const HeroSection = () => {
               {carouselItems.map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => goTo(i)}
+                  onClick={() => goTo(i, i > current ? 'next' : 'prev')}
                   className={`rounded-full transition-all duration-500 ${
                     i === current
                       ? 'w-6 h-2 bg-accent shadow-sm shadow-accent/40'
