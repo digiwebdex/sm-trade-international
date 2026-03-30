@@ -141,7 +141,7 @@ const AdminGallery = () => {
         });
         if (insertErr) throw insertErr;
 
-        updated[i] = { ...updated[i], status: 'done', url: urlData.publicUrl };
+        updated[i] = { ...updated[i], status: 'done', url: bulkPublicUrl };
         successCount++;
       } catch (err: any) {
         updated[i] = { ...updated[i], status: 'error', error: err.message };
