@@ -83,7 +83,7 @@ router.post('/:bucket', authMiddleware, upload.single('file'), (req, res) => {
 
   const bucket = req.params.bucket;
   const relativePath = path.relative(UPLOAD_BASE, req.file.path).replace(/\\/g, '/');
-  const publicUrl = `${process.env.API_BASE_URL || 'http://localhost:4000'}/uploads/${relativePath}`;
+  const publicUrl = `/uploads/${relativePath}`;
 
   res.json({ publicUrl, path: relativePath });
 });
