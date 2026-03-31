@@ -6,16 +6,18 @@ import { supabase } from '@/lib/apiClient';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import OptimizedImage from '@/components/OptimizedImage';
 
-const SPEED = 4000;
+const SPEED = 3500;
 
 const HeroSection = () => {
   const { lang } = useLanguage();
   const navigate = useNavigate();
-  const [current, setCurrent] = useState(0);
+  const [angle, setAngle] = useState(0);
   const [paused, setPaused] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const animRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number>(0);
   const touchStartX = useRef(0);
   const touchDelta = useRef(0);
+  const speedRef = useRef(0.015); // degrees per ms — continuous rotation speed
 
   const { data: dbProducts } = useQuery({
     queryKey: ['hero-products'],
@@ -40,65 +42,54 @@ const HeroSection = () => {
   }));
 
   const len = items.length;
-  const next = useCallback(() => { if (len > 1) setCurrent(c => (c + 1) % len); }, [len]);
-  const prev = useCallback(() => { if (len > 1) setCurrent(c => (c - 1 + len) % len); }, [len]);
 
+  // Continuous smooth rotation via requestAnimationFrame
   useEffect(() => {
     if (paused || len < 2) return;
-    timerRef.current = setInterval(next, SPEED);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [next, paused, len]);
+
+    const animate = (time: number) => {
+      if (lastTimeRef.current) {
+        const delta = time - lastTimeRef.current;
+        setAngle(prev => (prev + speedRef.current * delta) % 360);
+      }
+      lastTimeRef.current = time;
+      animRef.current = requestAnimationFrame(animate);
+    };
+
+    animRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+      lastTimeRef.current = 0;
+    };
+  }, [paused, len]);
 
   const onTouchStart = (e: TouchEvent) => { touchStartX.current = e.touches[0].clientX; touchDelta.current = 0; setPaused(true); };
-  const onTouchMove = (e: TouchEvent) => { touchDelta.current = e.touches[0].clientX - touchStartX.current; };
-  const onTouchEnd = () => { if (touchDelta.current > 50) prev(); else if (touchDelta.current < -50) next(); setPaused(false); };
+  const onTouchMove = (e: TouchEvent) => {
+    const delta = e.touches[0].clientX - touchStartX.current;
+    touchDelta.current = delta;
+    setAngle(prev => prev - delta * 0.15);
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const onTouchEnd = () => { setPaused(false); };
 
   if (len === 0) {
     return (
-      <section id="home" className="relative min-h-[420px] flex items-center justify-center"
+      <section id="home" className="relative min-h-[400px] flex items-center justify-center"
         style={{ background: 'linear-gradient(135deg, #0a1628 0%, #142240 50%, #0a1628 100%)' }}>
         <div className="w-10 h-10 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
       </section>
     );
   }
 
-  // Get 3 cards: previous, current, next
-  const getIndex = (offset: number) => ((current + offset) % len + len) % len;
-  const prevIdx = getIndex(-1);
-  const nextIdx = getIndex(1);
-
-  const cards = [
-    { idx: prevIdx, position: 'left' as const },
-    { idx: current, position: 'center' as const },
-    { idx: nextIdx, position: 'right' as const },
-  ];
-
-  const cardStyles = {
-    left: {
-      transform: 'translateX(-170px) scale(0.72) rotateY(12deg)',
-      zIndex: 5,
-      opacity: 0.7,
-      filter: 'brightness(0.85)',
-    },
-    center: {
-      transform: 'translateX(0) scale(1) rotateY(0deg)',
-      zIndex: 15,
-      opacity: 1,
-      filter: 'brightness(1)',
-    },
-    right: {
-      transform: 'translateX(170px) scale(0.72) rotateY(-12deg)',
-      zIndex: 5,
-      opacity: 0.7,
-      filter: 'brightness(0.85)',
-    },
-  };
+  const radius = 300;
+  const cardW = 160;
+  const cardH = 200;
 
   return (
     <section id="home" className="relative overflow-hidden"
       style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0f1d35 40%, #142240 60%, #0a1628 100%)' }}>
-      
-      {/* Subtle ambient glow */}
+
+      {/* Ambient glow */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full blur-[180px]"
           style={{ background: 'radial-gradient(circle, rgba(100,140,200,0.06), transparent 60%)' }} />
@@ -112,52 +103,60 @@ const HeroSection = () => {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        {/* 3-Card Coverflow */}
+        {/* Circular orbit container */}
         <div
-          className="relative w-full max-w-2xl mx-auto h-[300px] sm:h-[360px] md:h-[420px] flex items-center justify-center"
+          className="relative w-full max-w-3xl mx-auto h-[320px] sm:h-[380px] md:h-[430px] flex items-center justify-center"
           style={{ perspective: '1000px' }}
         >
-          {cards.map(({ idx, position }) => {
-            const item = items[idx];
-            const isCenter = position === 'center';
-            const style = cardStyles[position];
+          {items.map((item, i) => {
+            const itemAngle = (360 / len) * i + angle;
+            const rad = (itemAngle * Math.PI) / 180;
+
+            // Circular path: X from sin, Z from cos
+            const x = Math.sin(rad) * radius;
+            const z = Math.cos(rad) * radius;
+
+            // Normalize z: -radius to +radius → 0 to 1
+            const depthNorm = (z + radius) / (2 * radius); // 0=back, 1=front
+            const scale = 0.5 + depthNorm * 0.5;
+            const opacity = 0.25 + depthNorm * 0.75;
+            const zIndex = Math.round(depthNorm * 100);
+            const blur = depthNorm < 0.3 ? `blur(${Math.round((0.3 - depthNorm) * 6)}px)` : 'none';
+
+            const isFront = depthNorm > 0.9;
 
             return (
               <div
-                key={`${position}-${idx}`}
+                key={item.id}
                 className="absolute cursor-pointer"
                 style={{
-                  width: isCenter ? 280 : 180,
-                  height: isCenter ? 370 : 250,
+                  width: cardW,
+                  height: cardH,
                   left: '50%',
                   top: '50%',
-                  marginLeft: isCenter ? -140 : -90,
-                  marginTop: isCenter ? -185 : -125,
-                  transform: style.transform,
-                  zIndex: style.zIndex,
-                  opacity: style.opacity,
-                  filter: style.filter,
-                  transition: 'all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                  transformStyle: 'preserve-3d',
+                  marginLeft: -cardW / 2,
+                  marginTop: -cardH / 2,
+                  transform: `translateX(${x}px) scale(${scale})`,
+                  opacity,
+                  zIndex,
+                  filter: blur,
+                  // No CSS transition — driven by rAF for smooth continuous motion
                 }}
                 onClick={() => {
-                  if (isCenter) navigate(`/product/${item.id}`);
-                  else if (position === 'left') prev();
-                  else next();
+                  if (isFront) navigate(`/product/${item.id}`);
                 }}
               >
                 <div
                   className="w-full h-full rounded-2xl overflow-hidden"
                   style={{
                     background: '#ffffff',
-                    boxShadow: isCenter
-                      ? '0 30px 60px -15px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)'
-                      : '0 12px 30px -8px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.05)',
+                    boxShadow: isFront
+                      ? '0 25px 50px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.15)'
+                      : '0 8px 24px -6px rgba(0,0,0,0.3)',
                   }}
                 >
                   {/* Image */}
-                  <div className={`w-full ${isCenter ? 'h-[calc(100%-56px)]' : 'h-full'} p-4 flex items-center justify-center`}
-                    style={{ background: isCenter ? '#fff' : '#f3f3f3' }}>
+                  <div className={`w-full ${isFront ? 'h-[calc(100%-44px)]' : 'h-full'} p-3 flex items-center justify-center`}>
                     <OptimizedImage
                       src={item.img}
                       alt={item.label}
@@ -166,12 +165,11 @@ const HeroSection = () => {
                     />
                   </div>
 
-                  {/* Label — center card only */}
-                  {isCenter && (
-                    <div className="h-[56px] flex items-center justify-center px-4"
+                  {/* Label — front card only */}
+                  {isFront && (
+                    <div className="h-[44px] flex items-center justify-center px-3"
                       style={{ borderTop: '1px solid #eee' }}>
-                      <span className="text-sm font-semibold truncate text-center"
-                        style={{ color: '#333' }}>
+                      <span className="text-xs font-semibold truncate text-center" style={{ color: '#333' }}>
                         {item.label}
                       </span>
                     </div>
@@ -182,25 +180,20 @@ const HeroSection = () => {
           })}
         </div>
 
-        {/* Navigation dots */}
-        <div className="flex items-center gap-5 mt-4">
-          <button onClick={prev} aria-label="Previous"
+        {/* Controls */}
+        <div className="flex items-center gap-5 mt-2">
+          <button onClick={() => setAngle(a => a - 360 / len)} aria-label="Previous"
             className="w-10 h-10 rounded-full border border-white/15 bg-white/5 backdrop-blur flex items-center justify-center text-white/50 hover:text-white hover:border-white/30 hover:bg-white/10 transition-all duration-300 active:scale-90">
             <ChevronLeft className="w-5 h-5" />
           </button>
 
-          <div className="flex items-center gap-1.5">
-            {items.slice(0, Math.min(len, 12)).map((_, i) => (
-              <button key={i} onClick={() => setCurrent(i)} aria-label={`Go to slide ${i + 1}`}
-                className={`rounded-full transition-all duration-500 ${
-                  i === current
-                    ? 'w-6 h-2 bg-white shadow-sm'
-                    : 'w-2 h-2 bg-white/20 hover:bg-white/40'
-                }`} />
-            ))}
-          </div>
+          <button
+            onClick={() => setPaused(p => !p)}
+            className="px-4 py-1.5 rounded-full border border-white/15 bg-white/5 text-white/50 hover:text-white text-xs tracking-wider uppercase transition-all duration-300">
+            {paused ? '▶ Play' : '⏸ Pause'}
+          </button>
 
-          <button onClick={next} aria-label="Next"
+          <button onClick={() => setAngle(a => a + 360 / len)} aria-label="Next"
             className="w-10 h-10 rounded-full border border-white/15 bg-white/5 backdrop-blur flex items-center justify-center text-white/50 hover:text-white hover:border-white/30 hover:bg-white/10 transition-all duration-300 active:scale-90">
             <ChevronRight className="w-5 h-5" />
           </button>
