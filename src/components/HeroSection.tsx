@@ -22,98 +22,127 @@ const ProductCarousel = ({
   lang: string;
   onProductClick: (product: any) => void;
 }) => {
-  const [angle, setAngle] = useState(0);
+  const [activeIdx, setActiveIdx] = useState(0);
   const count = products.length;
-  const theta = count > 0 ? 360 / count : 0;
-  const radius = Math.max(200, count * 26);
 
   useEffect(() => {
     if (count < 2) return;
-    const timer = setInterval(() => setAngle(a => a - theta), CUBE_SPEED);
+    const timer = setInterval(() => setActiveIdx(i => (i + 1) % count), CUBE_SPEED);
     return () => clearInterval(timer);
-  }, [count, theta]);
+  }, [count]);
 
   if (count === 0) return null;
 
-  const goNext = () => setAngle(a => a - theta);
-  const goPrev = () => setAngle(a => a + theta);
-  const currentIdx = Math.round((-angle % 360 + 360) % 360 / theta) % count;
+  const goNext = () => setActiveIdx(i => (i + 1) % count);
+  const goPrev = () => setActiveIdx(i => (i - 1 + count) % count);
+
+  // Show 5 cards: active center + 2 on each side
+  const getOffset = (i: number) => {
+    let diff = i - activeIdx;
+    if (diff > count / 2) diff -= count;
+    if (diff < -count / 2) diff += count;
+    return diff;
+  };
 
   return (
-    <div className="relative flex flex-col items-center justify-center" style={{ width: 400, height: 420, perspective: '1200px' }}>
-      {/* Orbiting ring */}
-      <div
-        className="relative w-full flex-1"
-        style={{
-          transformStyle: 'preserve-3d',
-          transform: `rotateX(-5deg) rotateY(${angle}deg)`,
-          transition: 'transform 1.2s cubic-bezier(0.22, 1, 0.36, 1)',
-        }}
-      >
+    <div className="relative flex flex-col items-center justify-center" style={{ width: 440, height: 420 }}>
+      {/* Cards */}
+      <div className="relative w-full flex-1 flex items-center justify-center">
         {products.map((product, i) => {
-          const rotateY = theta * i;
+          const offset = getOffset(i);
+          const absOffset = Math.abs(offset);
+          if (absOffset > 2) return null;
+
+          const isActive = offset === 0;
+          const translateX = offset * 130;
+          const translateZ = isActive ? 60 : absOffset === 1 ? -20 : -80;
+          const rotateY = offset * -25;
+          const scale = isActive ? 1 : absOffset === 1 ? 0.82 : 0.65;
+          const opacity = isActive ? 1 : absOffset === 1 ? 0.7 : 0.4;
+          const zIndex = 10 - absOffset;
+
           return (
             <div
               key={product.id}
-              className="absolute left-1/2 top-1/2 cursor-pointer group"
+              className="absolute cursor-pointer"
               style={{
-                width: 170,
-                height: 230,
-                marginLeft: -85,
-                marginTop: -115,
-                transform: `rotateY(${rotateY}deg) translateZ(${radius}px)`,
-                transformStyle: 'preserve-3d',
-                backfaceVisibility: 'hidden',
+                width: 180,
+                height: 260,
+                transform: `perspective(1000px) translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
+                opacity,
+                zIndex,
+                transition: 'all 0.7s cubic-bezier(0.22, 1, 0.36, 1)',
+                filter: isActive ? 'brightness(1)' : `brightness(0.6)`,
               }}
-              onClick={() => onProductClick(product)}
+              onClick={() => isActive ? onProductClick(product) : setActiveIdx(i)}
             >
-              <div className="w-full h-full rounded-xl overflow-hidden border border-[hsl(var(--sm-gold)/0.3)] bg-gradient-to-b from-[hsl(var(--sm-black))] to-[hsl(222,40%,12%)] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)] group-hover:border-[hsl(var(--sm-gold)/0.6)] transition-colors duration-500">
-                <div className="flex-1 flex items-center justify-center p-4 relative">
-                  {/* Gold corner accents */}
-                  <div className="absolute top-0 left-0 w-6 h-6 border-t border-l border-[hsl(var(--sm-gold)/0.4)] rounded-tl-xl" />
-                  <div className="absolute top-0 right-0 w-6 h-6 border-t border-r border-[hsl(var(--sm-gold)/0.4)] rounded-tr-xl" />
+              <div className={`w-full h-full rounded-lg overflow-hidden flex flex-col transition-all duration-700
+                ${isActive
+                  ? 'border-2 border-[hsl(var(--sm-gold)/0.6)] shadow-[0_0_40px_hsl(var(--sm-gold)/0.2),0_20px_60px_rgba(0,0,0,0.6)]'
+                  : 'border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)]'
+                }
+                bg-gradient-to-b from-[hsl(222,40%,14%)] to-[hsl(222,47%,8%)]`}
+              >
+                {/* Image area */}
+                <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
+                  {isActive && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--sm-gold)/0.08)] to-transparent" />
+                  )}
                   <OptimizedImage
                     src={product.image_url || '/placeholder.svg'}
                     alt={lang === 'en' ? product.name_en : product.name_bn}
-                    className="max-w-full max-h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+                    className="max-w-full max-h-full object-contain relative z-[1] drop-shadow-[0_4px_16px_rgba(0,0,0,0.4)]"
                   />
                 </div>
-                <div className="px-3 py-2.5 text-center border-t border-[hsl(var(--sm-gold)/0.15)] bg-gradient-to-b from-transparent to-black/20">
-                  <h3 className="text-[11px] font-semibold text-[hsl(var(--sm-gold))] truncate tracking-wide uppercase">
+
+                {/* Info bar */}
+                <div className={`px-3 py-3 text-center border-t transition-all duration-700 ${
+                  isActive
+                    ? 'border-[hsl(var(--sm-gold)/0.3)] bg-gradient-to-t from-black/40 to-transparent'
+                    : 'border-white/5 bg-black/20'
+                }`}>
+                  <h3 className={`text-[11px] font-bold truncate tracking-wider uppercase transition-colors duration-500 ${
+                    isActive ? 'text-[hsl(var(--sm-gold))]' : 'text-white/50'
+                  }`}>
                     {lang === 'en' ? product.name_en : (product.name_bn || product.name_en)}
                   </h3>
+                  {isActive && product.product_code && (
+                    <p className="text-[9px] text-white/30 mt-0.5 tracking-widest">{product.product_code}</p>
+                  )}
                 </div>
               </div>
+
+              {/* Active card glow */}
+              {isActive && (
+                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-6 rounded-full opacity-40"
+                  style={{ background: 'radial-gradient(ellipse, hsl(var(--sm-gold) / 0.6), transparent 70%)' }} />
+              )}
             </div>
           );
         })}
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-4 mt-2 z-10">
+      <div className="flex items-center gap-5 mt-1 z-10">
         <button onClick={goPrev} aria-label="Previous product"
-          className="w-8 h-8 rounded-full border border-[hsl(var(--sm-gold)/0.3)] bg-black/40 backdrop-blur-sm flex items-center justify-center text-[hsl(var(--sm-gold)/0.6)] hover:text-[hsl(var(--sm-gold))] hover:border-[hsl(var(--sm-gold)/0.6)] transition-all">
+          className="w-9 h-9 rounded-full border border-[hsl(var(--sm-gold)/0.25)] bg-black/30 backdrop-blur-sm flex items-center justify-center text-[hsl(var(--sm-gold)/0.5)] hover:text-[hsl(var(--sm-gold))] hover:border-[hsl(var(--sm-gold)/0.5)] hover:bg-[hsl(var(--sm-gold)/0.1)] transition-all duration-300">
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {products.map((_, i) => (
-            <button key={i} onClick={() => setAngle(-theta * i)} aria-label={`Product ${i + 1}`}
+            <button key={i} onClick={() => setActiveIdx(i)} aria-label={`Product ${i + 1}`}
               className={`rounded-full transition-all duration-500 ${
-                i === currentIdx
-                  ? 'w-5 h-1.5 bg-[hsl(var(--sm-gold))] shadow-[0_0_8px_hsl(var(--sm-gold)/0.5)]'
-                  : 'w-1.5 h-1.5 bg-white/20 hover:bg-white/40'
+                i === activeIdx
+                  ? 'w-6 h-1.5 bg-gradient-to-r from-[hsl(var(--sm-gold))] to-[hsl(var(--sm-gold)/0.4)] shadow-[0_0_10px_hsl(var(--sm-gold)/0.4)]'
+                  : 'w-1.5 h-1.5 bg-white/15 hover:bg-white/35'
               }`} />
           ))}
         </div>
         <button onClick={goNext} aria-label="Next product"
-          className="w-8 h-8 rounded-full border border-[hsl(var(--sm-gold)/0.3)] bg-black/40 backdrop-blur-sm flex items-center justify-center text-[hsl(var(--sm-gold)/0.6)] hover:text-[hsl(var(--sm-gold))] hover:border-[hsl(var(--sm-gold)/0.6)] transition-all">
+          className="w-9 h-9 rounded-full border border-[hsl(var(--sm-gold)/0.25)] bg-black/30 backdrop-blur-sm flex items-center justify-center text-[hsl(var(--sm-gold)/0.5)] hover:text-[hsl(var(--sm-gold))] hover:border-[hsl(var(--sm-gold)/0.5)] hover:bg-[hsl(var(--sm-gold)/0.1)] transition-all duration-300">
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
-
-      {/* Floor glow */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-72 h-10 rounded-full opacity-20"
-        style={{ background: 'radial-gradient(ellipse, hsl(var(--sm-gold) / 0.8), transparent 70%)' }} />
     </div>
   );
 };
