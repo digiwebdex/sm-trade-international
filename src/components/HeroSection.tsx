@@ -12,8 +12,8 @@ import { productSlug } from '@/lib/productSlug';
 const SPEED = 5000;
 const CUBE_SPEED = 3500;
 
-/* ─── 3D Cube Carousel Component ─── */
-const ProductCube = ({
+/* ─── Coverflow Card Carousel ─── */
+const ProductCarousel = ({
   products,
   lang,
   onProductClick,
@@ -22,145 +22,93 @@ const ProductCube = ({
   lang: string;
   onProductClick: (product: any) => void;
 }) => {
-  const [faceIdx, setFaceIdx] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
 
   useEffect(() => {
     if (products.length < 2) return;
     const timer = setInterval(() => {
-      setIsTransitioning(true);
-      setTimeout(() => {
-        setFaceIdx(c => (c + 1) % products.length);
-        setIsTransitioning(false);
-      }, 600);
+      setActiveIdx(c => (c + 1) % products.length);
     }, CUBE_SPEED);
     return () => clearInterval(timer);
   }, [products.length]);
 
   if (products.length === 0) return null;
 
-  // Get 4 faces for the cube (current + next 3)
-  const getFace = (offset: number) => products[(faceIdx + offset) % products.length];
-  const faces = [getFace(0), getFace(1), getFace(2), getFace(3)];
+  const getProduct = (offset: number) => {
+    const idx = (activeIdx + offset + products.length) % products.length;
+    return products[idx];
+  };
 
-  const cubeSize = 280; // px
-  const half = cubeSize / 2;
+  const cards = [
+    { product: getProduct(-1), position: 'left' as const },
+    { product: getProduct(0), position: 'center' as const },
+    { product: getProduct(1), position: 'right' as const },
+  ];
 
-  // Calculate rotation based on faceIdx
-  const rotateY = faceIdx * -90;
+  const cardStyles: Record<string, React.CSSProperties> = {
+    left: {
+      transform: 'translateX(-60%) scale(0.75) rotateY(15deg)',
+      zIndex: 1,
+      opacity: 0.7,
+      filter: 'brightness(0.7)',
+    },
+    center: {
+      transform: 'translateX(0) scale(1) rotateY(0deg)',
+      zIndex: 3,
+      opacity: 1,
+      filter: 'brightness(1)',
+    },
+    right: {
+      transform: 'translateX(60%) scale(0.75) rotateY(-15deg)',
+      zIndex: 1,
+      opacity: 0.7,
+      filter: 'brightness(0.7)',
+    },
+  };
 
   return (
-    <div className="relative" style={{ width: cubeSize, height: cubeSize + 60, perspective: '900px' }}>
-      {/* Cube container */}
+    <div className="relative flex items-center justify-center" style={{ width: 420, height: 380, perspective: '1200px' }}>
+      {cards.map(({ product, position }) => (
+        <div
+          key={`${position}-${product.id}`}
+          className="absolute cursor-pointer transition-all duration-700 ease-in-out"
+          style={{
+            ...cardStyles[position],
+            transformStyle: 'preserve-3d',
+          }}
+          onClick={() => {
+            if (position === 'center') onProductClick(product);
+            else if (position === 'left') setActiveIdx((activeIdx - 1 + products.length) % products.length);
+            else setActiveIdx((activeIdx + 1) % products.length);
+          }}
+        >
+          <div className={`rounded-2xl overflow-hidden shadow-2xl transition-shadow duration-500 ${
+            position === 'center' ? 'shadow-black/50 ring-1 ring-white/20' : 'shadow-black/30'
+          }`}
+            style={{ width: position === 'center' ? 260 : 180, height: position === 'center' ? 340 : 240, background: 'rgba(255,255,255,0.95)' }}
+          >
+            <div className="w-full h-[75%] flex items-center justify-center p-4 bg-gradient-to-b from-gray-50 to-white">
+              <OptimizedImage
+                src={product.image_url || '/placeholder.svg'}
+                alt={lang === 'en' ? product.name_en : product.name_bn}
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+            {position === 'center' && (
+              <div className="px-4 py-3 text-center">
+                <h3 className="text-sm font-semibold text-gray-800 truncate animate-fade-in">
+                  {lang === 'en' ? product.name_en : (product.name_bn || product.name_en)}
+                </h3>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+
+      {/* Reflection glow */}
       <div
-        className="relative w-full"
-        style={{
-          height: cubeSize,
-          transformStyle: 'preserve-3d',
-          transform: `translateZ(-${half}px) rotateY(${rotateY}deg)`,
-          transition: isTransitioning ? 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
-        }}
-      >
-        {/* Front face */}
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer group"
-          style={{
-            transform: `translateZ(${half}px)`,
-            backfaceVisibility: 'hidden',
-          }}
-          onClick={() => onProductClick(faces[0])}
-        >
-          <div className="w-full h-full rounded-2xl bg-white/10 backdrop-blur-lg border border-white/20 overflow-hidden shadow-2xl shadow-black/30 flex flex-col">
-            <div className="flex-1 p-4 flex items-center justify-center bg-white/5">
-              <OptimizedImage
-                src={faces[0]?.image_url || '/placeholder.svg'}
-                alt={lang === 'en' ? faces[0]?.name_en : faces[0]?.name_bn}
-                className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Right face */}
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer group"
-          style={{
-            transform: `rotateY(90deg) translateZ(${half}px)`,
-            backfaceVisibility: 'hidden',
-          }}
-          onClick={() => onProductClick(faces[1])}
-        >
-          <div className="w-full h-full rounded-2xl bg-white/10 backdrop-blur-lg border border-white/20 overflow-hidden shadow-2xl shadow-black/30 flex flex-col">
-            <div className="flex-1 p-4 flex items-center justify-center bg-white/5">
-              <OptimizedImage
-                src={faces[1]?.image_url || '/placeholder.svg'}
-                alt={lang === 'en' ? faces[1]?.name_en : faces[1]?.name_bn}
-                className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Back face */}
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer group"
-          style={{
-            transform: `rotateY(180deg) translateZ(${half}px)`,
-            backfaceVisibility: 'hidden',
-          }}
-          onClick={() => onProductClick(faces[2])}
-        >
-          <div className="w-full h-full rounded-2xl bg-white/10 backdrop-blur-lg border border-white/20 overflow-hidden shadow-2xl shadow-black/30 flex flex-col">
-            <div className="flex-1 p-4 flex items-center justify-center bg-white/5">
-              <OptimizedImage
-                src={faces[2]?.image_url || '/placeholder.svg'}
-                alt={lang === 'en' ? faces[2]?.name_en : faces[2]?.name_bn}
-                className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Left face */}
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer group"
-          style={{
-            transform: `rotateY(-90deg) translateZ(${half}px)`,
-            backfaceVisibility: 'hidden',
-          }}
-          onClick={() => onProductClick(faces[3])}
-        >
-          <div className="w-full h-full rounded-2xl bg-white/10 backdrop-blur-lg border border-white/20 overflow-hidden shadow-2xl shadow-black/30 flex flex-col">
-            <div className="flex-1 p-4 flex items-center justify-center bg-white/5">
-              <OptimizedImage
-                src={faces[3]?.image_url || '/placeholder.svg'}
-                alt={lang === 'en' ? faces[3]?.name_en : faces[3]?.name_bn}
-                className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Product name label below cube */}
-      <div className="mt-4 text-center px-2">
-        <h3
-          key={`cube-label-${faceIdx}`}
-          className="text-white font-semibold text-sm truncate animate-fade-in"
-        >
-          {lang === 'en' ? faces[0]?.name_en : (faces[0]?.name_bn || faces[0]?.name_en)}
-        </h3>
-        {faces[0]?.unit_price > 0 && (
-          <p className="text-primary text-xs mt-1 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            ৳ {Number(faces[0].unit_price).toLocaleString()}
-          </p>
-        )}
-      </div>
-
-      {/* Cube shadow / reflection */}
-      <div
-        className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-4 rounded-full opacity-30"
-        style={{ background: 'radial-gradient(ellipse, hsl(var(--primary) / 0.4), transparent)' }}
+        className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-48 h-6 rounded-full opacity-20"
+        style={{ background: 'radial-gradient(ellipse, hsl(var(--primary) / 0.5), transparent)' }}
       />
     </div>
   );
