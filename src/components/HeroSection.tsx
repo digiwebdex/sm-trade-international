@@ -1,39 +1,21 @@
 import { useState, useEffect, useRef, useCallback, TouchEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/apiClient';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import OptimizedImage from '@/components/OptimizedImage';
-import heroBg from '@/assets/hero-bg.jpg';
 
-let hasAnimated = false;
 const SPEED = 4000;
 
 const HeroSection = () => {
-  const { t, lang } = useLanguage();
-  const { get } = useSiteSettings();
+  const { lang } = useLanguage();
   const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartX = useRef(0);
   const touchDelta = useRef(0);
-  const isFirstLoad = !hasAnimated;
-
-  useEffect(() => { if (!hasAnimated) hasAnimated = true; }, []);
-  const anim = (delay: string) =>
-    isFirstLoad ? { animation: `heroFadeUp 0.7s ${delay} ease-out both` } : {};
-
-  const title = get('hero', 'title', t('hero.title'));
-  const subtitle = get('hero', 'subtitle', t('hero.subtitle'));
-  const ctaPrimary = get('hero', 'cta_primary', t('hero.cta'));
-  const stats = [1, 2, 3, 4].map(n => ({
-    value: get('hero', `stat${n}_value`, n === 1 ? '500+' : n === 2 ? '10+' : n === 3 ? '1000+' : '50+'),
-    label: get('hero', `stat${n}_label`, n === 1 ? 'Clients' : n === 2 ? 'Years' : n === 3 ? 'Products' : 'Countries'),
-  }));
 
   const { data: dbProducts } = useQuery({
     queryKey: ['hero-products'],
@@ -73,198 +55,137 @@ const HeroSection = () => {
   const onTouchMove = (e: TouchEvent) => { touchDelta.current = e.touches[0].clientX - touchStartX.current; };
   const onTouchEnd = () => { if (touchDelta.current > 50) prev(); else if (touchDelta.current < -50) next(); setPaused(false); };
 
-  // Card configs: offset from center, pixel translateX, scale, rotateY, opacity
-  const cardConfigs = [
-    { offset: -1, tx: -170, scale: 0.75, ry: 35, opacity: 0.7, z: 2 },
-    { offset: 0,  tx: 0,    scale: 1,    ry: 0,  opacity: 1,   z: 10 },
-    { offset: 1,  tx: 170,  scale: 0.75, ry: -35, opacity: 0.7, z: 2 },
-  ];
+  if (len === 0) {
+    return (
+      <section id="home" className="relative bg-[#0a1628] min-h-[420px] flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+      </section>
+    );
+  }
+
+  const centerItem = items[current];
+  const leftItem = len > 1 ? items[safeIdx(current - 1)] : null;
+  const rightItem = len > 1 ? items[safeIdx(current + 1)] : null;
 
   return (
-    <section id="home" className="relative bg-foreground" style={{ overflow: 'clip' }}>
-      <OptimizedImage src={heroBg} alt="" priority blurPlaceholder={false}
-        className="absolute inset-0 w-full h-full object-cover opacity-20" wrapperClassName="absolute inset-0" />
-      <div className="absolute inset-0 bg-gradient-to-br from-foreground/90 via-foreground/70 to-primary/30" />
+    <section id="home" className="relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0a1628 0%, #0f2040 50%, #0a1628 100%)' }}>
+      {/* Background ambient effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-blue-500/5 blur-[120px]" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      </div>
 
-      <div className="relative z-10 container mx-auto px-4 pt-4 pb-8 lg:pt-6 lg:pb-12">
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center min-h-[500px] lg:min-h-[560px]">
-
-          {/* Left — Copy */}
-          <div className="flex flex-col justify-center" style={anim('0s')}>
-            <p className="text-xs uppercase tracking-[0.3em] text-accent/80 mb-3 font-medium"
-              style={{ fontFamily: 'DM Sans, sans-serif', ...anim('0.05s') }}>
-              S.M. Trade International
-            </p>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] mb-5 text-white"
-              style={anim('0.1s')}>{title}</h1>
-            <p className="text-base md:text-lg text-white/60 mb-8 max-w-lg leading-relaxed"
-              style={{ fontFamily: 'DM Sans, sans-serif', ...anim('0.2s') }}>{subtitle}</p>
-
-            <div className="flex flex-col sm:flex-row gap-4" style={anim('0.3s')}>
-              <Button asChild size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-base rounded-lg shadow-lg">
-                <a href="#contact">
-                  <span className="flex items-center gap-2 font-semibold" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                    {ctaPrimary}<ArrowRight className="w-5 h-5" />
-                  </span>
-                </a>
-              </Button>
-              <Button asChild variant="outline" size="lg"
-                className="border-white/20 text-white bg-white/5 backdrop-blur-sm px-8 py-6 text-base rounded-lg hover:bg-white/10 hover:border-white/30">
-                <a href="#products">
-                  <span className="font-semibold" style={{ fontFamily: 'DM Sans, sans-serif' }}>{t('hero.contact')}</span>
-                </a>
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-4 gap-4 mt-10 pt-8 border-t border-white/10" style={anim('0.5s')}>
-              {stats.map(s => (
-                <div key={s.label}>
-                  <div className="text-white font-bold text-xl md:text-2xl" style={{ fontFamily: 'DM Sans, sans-serif' }}>{s.value}</div>
-                  <div className="text-white/40 text-[10px] md:text-xs tracking-wider uppercase" style={{ fontFamily: 'DM Sans, sans-serif' }}>{s.label}</div>
+      <div
+        className="relative z-10 flex flex-col items-center justify-center px-4 py-12 md:py-16 lg:py-20 touch-pan-y"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        {/* 3D Coverflow Area */}
+        <div className="relative w-full max-w-3xl mx-auto h-[320px] sm:h-[380px] md:h-[420px]" style={{ perspective: '1200px' }}>
+          
+          {/* Left card */}
+          {leftItem && (
+            <div
+              className="absolute top-1/2 left-1/2 cursor-pointer"
+              style={{
+                width: 'clamp(140px, 22vw, 220px)',
+                height: 'clamp(180px, 28vw, 280px)',
+                transform: 'translate(-50%, -50%) translateX(clamp(-220px, -28vw, -160px)) scale(0.78) rotateY(30deg)',
+                transformOrigin: 'right center',
+                opacity: 0.6,
+                zIndex: 2,
+                transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+              }}
+              onClick={prev}
+            >
+              <div className="w-full h-full rounded-xl overflow-hidden bg-white/95 shadow-2xl shadow-black/30">
+                <div className="w-full h-full p-3 flex items-center justify-center">
+                  <OptimizedImage src={leftItem.img} alt={leftItem.label}
+                    className="w-full h-full object-contain" blurPlaceholder={false} />
                 </div>
-              ))}
+              </div>
+            </div>
+          )}
+
+          {/* Center card */}
+          <div
+            className="absolute top-1/2 left-1/2 cursor-pointer"
+            style={{
+              width: 'clamp(200px, 30vw, 300px)',
+              height: 'clamp(260px, 38vw, 380px)',
+              transform: 'translate(-50%, -50%) scale(1)',
+              zIndex: 10,
+              transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+            }}
+            onClick={() => navigate(`/product/${centerItem.id}`)}
+          >
+            <div className="w-full h-full rounded-2xl overflow-hidden bg-white shadow-[0_30px_80px_-15px_rgba(0,0,0,0.5),0_0_40px_-10px_rgba(59,130,246,0.15)]">
+              {/* Product image */}
+              <div className="w-full h-[calc(100%-56px)] p-4 flex items-center justify-center">
+                <OptimizedImage src={centerItem.img} alt={centerItem.label}
+                  className="w-full h-full object-contain drop-shadow-md" blurPlaceholder={false} />
+              </div>
+              {/* Product name label */}
+              <div className="h-[56px] flex items-center justify-center bg-gradient-to-t from-gray-50 to-white border-t border-gray-100 px-4">
+                <span className="text-sm font-semibold text-gray-700 truncate text-center leading-tight">
+                  {centerItem.label}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Right — 3D Coverflow Carousel */}
-          {len > 0 && (
+          {/* Right card */}
+          {rightItem && (
             <div
-              className="relative flex flex-col items-center justify-center touch-pan-y"
-              style={anim('0.4s')}
-              onMouseEnter={() => setPaused(true)}
-              onMouseLeave={() => setPaused(false)}
-              onTouchStart={onTouchStart}
-              onTouchMove={onTouchMove}
-              onTouchEnd={onTouchEnd}
+              className="absolute top-1/2 left-1/2 cursor-pointer"
+              style={{
+                width: 'clamp(140px, 22vw, 220px)',
+                height: 'clamp(180px, 28vw, 280px)',
+                transform: 'translate(-50%, -50%) translateX(clamp(160px, 28vw, 220px)) scale(0.78) rotateY(-30deg)',
+                transformOrigin: 'left center',
+                opacity: 0.6,
+                zIndex: 2,
+                transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+              }}
+              onClick={next}
             >
-              {/* Ambient glow */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] rounded-full bg-accent/8 blur-[80px] pointer-events-none" />
-
-              {/* Cards area */}
-              <div
-                className="relative w-full h-[340px] sm:h-[380px] mx-auto mb-4"
-                style={{ perspective: '1000px' }}
-              >
-                {cardConfigs.map(cfg => {
-                  if (len < 2 && cfg.offset !== 0) return null;
-                  const idx = safeIdx(current + cfg.offset);
-                  const item = items[idx];
-                  if (!item) return null;
-                  const isCenter = cfg.offset === 0;
-
-                  return (
-                    <div
-                      key={`pos-${cfg.offset}`}
-                      style={{
-                        position: 'absolute',
-                        width: isCenter ? 230 : 170,
-                        height: isCenter ? 300 : 225,
-                        left: '50%',
-                        top: '50%',
-                        marginLeft: isCenter ? -115 : -85,
-                        marginTop: isCenter ? -150 : -112,
-                        transform: `translateX(${cfg.tx}px) scale(${cfg.scale}) rotateY(${cfg.ry}deg)`,
-                        opacity: cfg.opacity,
-                        zIndex: cfg.z,
-                        transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                        cursor: 'pointer',
-                        transformOrigin: cfg.offset < 0 ? 'right center' : cfg.offset > 0 ? 'left center' : 'center center',
-                      }}
-                      onClick={() => {
-                        if (isCenter) navigate(`/product/${item.id}`);
-                        else if (cfg.offset < 0) prev();
-                        else next();
-                      }}
-                    >
-                      <div
-                        className="w-full h-full rounded-2xl overflow-hidden relative group"
-                        style={{
-                          background: 'linear-gradient(160deg, #ffffff 0%, #f7f5f0 60%, #efe9df 100%)',
-                          boxShadow: isCenter
-                            ? '0 30px 70px -15px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.8)'
-                            : '0 15px 35px -10px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.08)',
-                        }}
-                      >
-                        {/* Top gold line for center */}
-                        {isCenter && (
-                          <div className="absolute top-0 left-6 right-6 h-[2px] bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
-                        )}
-
-                        {/* Corner accents for center */}
-                        {isCenter && (
-                          <>
-                            <div className="absolute top-3 left-3 w-4 h-4 border-t-[1.5px] border-l-[1.5px] border-accent/25 rounded-tl-lg" />
-                            <div className="absolute top-3 right-3 w-4 h-4 border-t-[1.5px] border-r-[1.5px] border-accent/25 rounded-tr-lg" />
-                            <div className="absolute bottom-10 left-3 w-4 h-4 border-b-[1.5px] border-l-[1.5px] border-accent/25 rounded-bl-lg" />
-                            <div className="absolute bottom-10 right-3 w-4 h-4 border-b-[1.5px] border-r-[1.5px] border-accent/25 rounded-br-lg" />
-                          </>
-                        )}
-
-                        {/* Product image */}
-                        <div className={`w-full ${isCenter ? 'h-[calc(100%-42px)]' : 'h-full'} p-4 flex items-center justify-center`}>
-                          <OptimizedImage
-                            src={item.img}
-                            alt={item.label}
-                            className="w-full h-full object-contain drop-shadow-lg"
-                            sizes={isCenter ? '230px' : '170px'}
-                            blurPlaceholder={false}
-                          />
-                        </div>
-
-                        {/* Label bar — center only */}
-                        {isCenter && (
-                          <div className="absolute bottom-0 inset-x-0 h-[42px] flex items-center justify-center bg-gradient-to-t from-white/90 to-white/40 backdrop-blur-sm border-t border-accent/10">
-                            <span className="text-[11px] font-bold text-foreground/70 truncate px-4 tracking-wider uppercase"
-                              style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                              {item.label}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Shine */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-transparent pointer-events-none rounded-2xl" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Controls */}
-              <div className="flex items-center gap-4">
-                <button onClick={prev}
-                  className="w-10 h-10 rounded-full border border-white/15 bg-white/5 backdrop-blur-xl flex items-center justify-center text-white/60 hover:text-white hover:border-accent/40 hover:bg-accent/10 transition-all duration-300 hover:scale-110">
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-
-                <div className="flex items-center gap-2">
-                  {items.slice(0, Math.min(len, 10)).map((_, i) => (
-                    <button key={i} onClick={() => setCurrent(i)}
-                      className={`rounded-full transition-all duration-500 ${
-                        i === current
-                          ? 'w-7 h-2.5 bg-gradient-to-r from-accent to-accent/70 shadow-md shadow-accent/30'
-                          : 'w-2.5 h-2.5 bg-white/15 hover:bg-white/35'
-                      }`} />
-                  ))}
+              <div className="w-full h-full rounded-xl overflow-hidden bg-white/95 shadow-2xl shadow-black/30">
+                <div className="w-full h-full p-3 flex items-center justify-center">
+                  <OptimizedImage src={rightItem.img} alt={rightItem.label}
+                    className="w-full h-full object-contain" blurPlaceholder={false} />
                 </div>
-
-                <button onClick={next}
-                  className="w-10 h-10 rounded-full border border-white/15 bg-white/5 backdrop-blur-xl flex items-center justify-center text-white/60 hover:text-white hover:border-accent/40 hover:bg-accent/10 transition-all duration-300 hover:scale-110">
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-
-                <button onClick={() => setPaused(p => !p)}
-                  className="w-8 h-8 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/30 hover:text-white/60 transition-all duration-300"
-                  title={paused ? 'Play' : 'Pause'}>
-                  {paused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
-                </button>
               </div>
             </div>
           )}
         </div>
-      </div>
 
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent z-10" />
+        {/* Navigation controls */}
+        <div className="flex items-center gap-5 mt-6">
+          <button onClick={prev}
+            className="w-10 h-10 rounded-full border border-white/20 bg-white/5 backdrop-blur flex items-center justify-center text-white/60 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all duration-300">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          <div className="flex items-center gap-2">
+            {items.slice(0, Math.min(len, 12)).map((_, i) => (
+              <button key={i} onClick={() => setCurrent(i)}
+                className={`rounded-full transition-all duration-400 ${
+                  i === current
+                    ? 'w-7 h-2.5 bg-white shadow-sm'
+                    : 'w-2.5 h-2.5 bg-white/20 hover:bg-white/40'
+                }`} />
+            ))}
+          </div>
+
+          <button onClick={next}
+            className="w-10 h-10 rounded-full border border-white/20 bg-white/5 backdrop-blur flex items-center justify-center text-white/60 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all duration-300">
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
     </section>
   );
 };
