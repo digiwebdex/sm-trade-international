@@ -283,9 +283,9 @@ const HeroSection = () => {
         </div>
 
         {/* Right: 3D Cube Carousel */}
-        {products.length >= 4 && (
+        {products.length >= 3 && (
           <div className="hidden lg:flex items-center justify-center py-16 md:py-24 shrink-0">
-            <ProductCube
+            <ProductCarousel
               products={products}
               lang={lang}
               onProductClick={handleProductClick}
