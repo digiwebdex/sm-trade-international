@@ -44,7 +44,7 @@ const Footer = () => {
     ? get('footer', 'contactinfo_title_bn', t('footer.contactinfo'))
     : get('footer', 'contactinfo_title_en', t('footer.contactinfo'));
 
-  const footerVideoUrl = get('footer', 'video_url', '');
+  const footerVideoUrl = get('footer', 'video_url', 'https://videos.pexels.com/video-files/6578977/6578977-uhd_2560_1440_30fps.mp4');
   const footerBgImage = get('footer', 'bg_image', '/images/footer-bg.jpg');
 
   const { data: allSettings } = useQuery({
