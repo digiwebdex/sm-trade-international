@@ -12,7 +12,7 @@ import { productSlug } from '@/lib/productSlug';
 const SPEED = 5000;
 const CUBE_SPEED = 3500;
 
-/* ─── Coverflow Card Carousel ─── */
+/* ─── 3D Round Carousel ─── */
 const ProductCarousel = ({
   products,
   lang,
@@ -22,93 +22,71 @@ const ProductCarousel = ({
   lang: string;
   onProductClick: (product: any) => void;
 }) => {
-  const [activeIdx, setActiveIdx] = useState(0);
+  const [angle, setAngle] = useState(0);
+  const count = products.length;
+  const theta = count > 0 ? 360 / count : 0;
+  const radius = Math.max(220, count * 28);
 
   useEffect(() => {
-    if (products.length < 2) return;
+    if (count < 2) return;
     const timer = setInterval(() => {
-      setActiveIdx(c => (c + 1) % products.length);
+      setAngle(a => a - theta);
     }, CUBE_SPEED);
     return () => clearInterval(timer);
-  }, [products.length]);
+  }, [count, theta]);
 
-  if (products.length === 0) return null;
-
-  const getProduct = (offset: number) => {
-    const idx = (activeIdx + offset + products.length) % products.length;
-    return products[idx];
-  };
-
-  const cards = [
-    { product: getProduct(-1), position: 'left' as const },
-    { product: getProduct(0), position: 'center' as const },
-    { product: getProduct(1), position: 'right' as const },
-  ];
-
-  const cardStyles: Record<string, React.CSSProperties> = {
-    left: {
-      transform: 'translateX(-60%) scale(0.75) rotateY(15deg)',
-      zIndex: 1,
-      opacity: 0.7,
-      filter: 'brightness(0.7)',
-    },
-    center: {
-      transform: 'translateX(0) scale(1) rotateY(0deg)',
-      zIndex: 3,
-      opacity: 1,
-      filter: 'brightness(1)',
-    },
-    right: {
-      transform: 'translateX(60%) scale(0.75) rotateY(-15deg)',
-      zIndex: 1,
-      opacity: 0.7,
-      filter: 'brightness(0.7)',
-    },
-  };
+  if (count === 0) return null;
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 420, height: 380, perspective: '1200px' }}>
-      {cards.map(({ product, position }) => (
-        <div
-          key={`${position}-${product.id}`}
-          className="absolute cursor-pointer transition-all duration-700 ease-in-out"
-          style={{
-            ...cardStyles[position],
-            transformStyle: 'preserve-3d',
-          }}
-          onClick={() => {
-            if (position === 'center') onProductClick(product);
-            else if (position === 'left') setActiveIdx((activeIdx - 1 + products.length) % products.length);
-            else setActiveIdx((activeIdx + 1) % products.length);
-          }}
-        >
-          <div className={`rounded-2xl overflow-hidden shadow-2xl transition-shadow duration-500 ${
-            position === 'center' ? 'shadow-black/50 ring-1 ring-white/20' : 'shadow-black/30'
-          }`}
-            style={{ width: position === 'center' ? 260 : 180, height: position === 'center' ? 340 : 240, background: 'rgba(255,255,255,0.95)' }}
-          >
-            <div className="w-full h-[75%] flex items-center justify-center p-4 bg-gradient-to-b from-gray-50 to-white">
-              <OptimizedImage
-                src={product.image_url || '/placeholder.svg'}
-                alt={lang === 'en' ? product.name_en : product.name_bn}
-                className="max-w-full max-h-full object-contain"
-              />
-            </div>
-            {position === 'center' && (
-              <div className="px-4 py-3 text-center">
-                <h3 className="text-sm font-semibold text-gray-800 truncate animate-fade-in">
-                  {lang === 'en' ? product.name_en : (product.name_bn || product.name_en)}
-                </h3>
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-
-      {/* Reflection glow */}
+    <div className="relative flex items-center justify-center" style={{ width: 420, height: 400, perspective: '1000px' }}>
       <div
-        className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-48 h-6 rounded-full opacity-20"
-        style={{ background: 'radial-gradient(ellipse, hsl(var(--primary) / 0.5), transparent)' }}
+        className="relative w-full h-full"
+        style={{
+          transformStyle: 'preserve-3d',
+          transform: `rotateY(${angle}deg)`,
+          transition: 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
+        {products.map((product, i) => {
+          const rotateY = theta * i;
+          return (
+            <div
+              key={product.id}
+              className="absolute left-1/2 top-1/2 cursor-pointer"
+              style={{
+                width: 180,
+                height: 240,
+                marginLeft: -90,
+                marginTop: -120,
+                transform: `rotateY(${rotateY}deg) translateZ(${radius}px)`,
+                transformStyle: 'preserve-3d',
+                backfaceVisibility: 'hidden',
+              }}
+              onClick={() => onProductClick(product)}
+            >
+              <div className="w-full h-full rounded-2xl overflow-hidden shadow-2xl shadow-black/40 ring-1 ring-white/10 bg-white/95 flex flex-col">
+                <div className="flex-1 flex items-center justify-center p-3 bg-gradient-to-b from-gray-50 to-white">
+                  <OptimizedImage
+                    src={product.image_url || '/placeholder.svg'}
+                    alt={lang === 'en' ? product.name_en : product.name_bn}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+                <div className="px-3 py-2 text-center bg-white border-t border-gray-100">
+                  <h3 className="text-xs font-semibold text-gray-800 truncate">
+                    {lang === 'en' ? product.name_en : (product.name_bn || product.name_en)}
+                  </h3>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Floor reflection */}
+      <div
+        className="absolute bottom-2 left-1/2 -translate-x-1/2 w-64 h-8 rounded-full opacity-15"
+        style={{ background: 'radial-gradient(ellipse, hsl(var(--sm-gold) / 0.6), transparent)' }}
       />
     </div>
   );
