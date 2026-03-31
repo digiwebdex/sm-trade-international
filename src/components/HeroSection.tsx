@@ -13,6 +13,7 @@ const VISIBLE = 5; // number of cards visible in the circle
 const HeroSection = () => {
   const { lang } = useLanguage();
   const navigate = useNavigate();
+  const { get } = useSiteSettings();
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
