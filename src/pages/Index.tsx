@@ -15,6 +15,7 @@ const sectionComponents: Record<string, React.ComponentType> = {
   about: AboutSection,
   services: ServicesSection,
   process: ProcessSection,
+  productSlider: ProductSlider,
   products: ProductsSection,
   clients: ClientsSection,
   quote: QuoteRequestForm,
