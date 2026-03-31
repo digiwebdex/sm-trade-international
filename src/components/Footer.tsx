@@ -28,7 +28,7 @@ const Footer = () => {
   const creditText = get('branding', 'credit_text', 'Digitally Crafted by Digiwebdex.com');
   const creditUrl = get('branding', 'credit_url', 'https://digiwebdex.com');
   const phone = get('contact', 'phone', '+88 01867666888');
-  const email = get('contact', 'email', 'smtrade.int94@gmail.com');
+  const email = get('contact', 'email', 'info@smtradeint.com');
   const address = get('contact', 'address', t('contact.addressValue'));
 
   const desc = lang === 'bn'
