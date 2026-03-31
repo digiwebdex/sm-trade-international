@@ -4,7 +4,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/apiClient';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight, Sparkles } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
 import OptimizedImage from '@/components/OptimizedImage';
 import { productSlug } from '@/lib/productSlug';
@@ -12,7 +12,7 @@ import { productSlug } from '@/lib/productSlug';
 const SPEED = 5000;
 const CUBE_SPEED = 3500;
 
-/* ─── 3D Round Carousel ─── */
+/* ─── 3D Round Carousel (Luxury) ─── */
 const ProductCarousel = ({
   products,
   lang,
@@ -25,13 +25,11 @@ const ProductCarousel = ({
   const [angle, setAngle] = useState(0);
   const count = products.length;
   const theta = count > 0 ? 360 / count : 0;
-  const radius = Math.max(220, count * 28);
+  const radius = Math.max(200, count * 26);
 
   useEffect(() => {
     if (count < 2) return;
-    const timer = setInterval(() => {
-      setAngle(a => a - theta);
-    }, CUBE_SPEED);
+    const timer = setInterval(() => setAngle(a => a - theta), CUBE_SPEED);
     return () => clearInterval(timer);
   }, [count, theta]);
 
@@ -39,15 +37,17 @@ const ProductCarousel = ({
 
   const goNext = () => setAngle(a => a - theta);
   const goPrev = () => setAngle(a => a + theta);
+  const currentIdx = Math.round((-angle % 360 + 360) % 360 / theta) % count;
 
   return (
-    <div className="relative flex flex-col items-center justify-center" style={{ width: 420, height: 440, perspective: '1000px' }}>
+    <div className="relative flex flex-col items-center justify-center" style={{ width: 400, height: 420, perspective: '1200px' }}>
+      {/* Orbiting ring */}
       <div
         className="relative w-full flex-1"
         style={{
           transformStyle: 'preserve-3d',
-          transform: `rotateY(${angle}deg)`,
-          transition: 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)',
+          transform: `rotateX(-5deg) rotateY(${angle}deg)`,
+          transition: 'transform 1.2s cubic-bezier(0.22, 1, 0.36, 1)',
         }}
       >
         {products.map((product, i) => {
@@ -55,28 +55,31 @@ const ProductCarousel = ({
           return (
             <div
               key={product.id}
-              className="absolute left-1/2 top-1/2 cursor-pointer"
+              className="absolute left-1/2 top-1/2 cursor-pointer group"
               style={{
-                width: 180,
-                height: 240,
-                marginLeft: -90,
-                marginTop: -120,
+                width: 170,
+                height: 230,
+                marginLeft: -85,
+                marginTop: -115,
                 transform: `rotateY(${rotateY}deg) translateZ(${radius}px)`,
                 transformStyle: 'preserve-3d',
                 backfaceVisibility: 'hidden',
               }}
               onClick={() => onProductClick(product)}
             >
-              <div className="w-full h-full rounded-2xl overflow-hidden shadow-2xl shadow-black/40 ring-1 ring-white/10 bg-white/95 flex flex-col">
-                <div className="flex-1 flex items-center justify-center p-3 bg-gradient-to-b from-gray-50 to-white">
+              <div className="w-full h-full rounded-xl overflow-hidden border border-[hsl(var(--sm-gold)/0.3)] bg-gradient-to-b from-[hsl(var(--sm-black))] to-[hsl(222,40%,12%)] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)] group-hover:border-[hsl(var(--sm-gold)/0.6)] transition-colors duration-500">
+                <div className="flex-1 flex items-center justify-center p-4 relative">
+                  {/* Gold corner accents */}
+                  <div className="absolute top-0 left-0 w-6 h-6 border-t border-l border-[hsl(var(--sm-gold)/0.4)] rounded-tl-xl" />
+                  <div className="absolute top-0 right-0 w-6 h-6 border-t border-r border-[hsl(var(--sm-gold)/0.4)] rounded-tr-xl" />
                   <OptimizedImage
                     src={product.image_url || '/placeholder.svg'}
                     alt={lang === 'en' ? product.name_en : product.name_bn}
-                    className="max-w-full max-h-full object-contain"
+                    className="max-w-full max-h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
                   />
                 </div>
-                <div className="px-3 py-2 text-center bg-white border-t border-gray-100">
-                  <h3 className="text-xs font-semibold text-gray-800 truncate">
+                <div className="px-3 py-2.5 text-center border-t border-[hsl(var(--sm-gold)/0.15)] bg-gradient-to-b from-transparent to-black/20">
+                  <h3 className="text-[11px] font-semibold text-[hsl(var(--sm-gold))] truncate tracking-wide uppercase">
                     {lang === 'en' ? product.name_en : (product.name_bn || product.name_en)}
                   </h3>
                 </div>
@@ -86,51 +89,36 @@ const ProductCarousel = ({
         })}
       </div>
 
-      {/* Slider controls */}
-      <div className="flex items-center gap-4 mt-4 z-10">
-        <button
-          onClick={goPrev}
-          className="w-9 h-9 rounded-full border border-white/20 bg-black/30 backdrop-blur flex items-center justify-center text-white/70 hover:text-white hover:border-white/40 transition-all"
-          aria-label="Previous product"
-        >
+      {/* Controls */}
+      <div className="flex items-center gap-4 mt-2 z-10">
+        <button onClick={goPrev} aria-label="Previous product"
+          className="w-8 h-8 rounded-full border border-[hsl(var(--sm-gold)/0.3)] bg-black/40 backdrop-blur-sm flex items-center justify-center text-[hsl(var(--sm-gold)/0.6)] hover:text-[hsl(var(--sm-gold))] hover:border-[hsl(var(--sm-gold)/0.6)] transition-all">
           <ChevronLeft className="w-4 h-4" />
         </button>
         <div className="flex items-center gap-1.5">
-          {products.map((_, i) => {
-            const currentIdx = Math.round((-angle % 360 + 360) % 360 / theta) % count;
-            return (
-              <button
-                key={i}
-                onClick={() => setAngle(-theta * i)}
-                className={`rounded-full transition-all duration-400 ${
-                  i === currentIdx
-                    ? 'w-6 h-2 bg-accent shadow-md'
-                    : 'w-2 h-2 bg-white/25 hover:bg-white/50'
-                }`}
-                aria-label={`Product ${i + 1}`}
-              />
-            );
-          })}
+          {products.map((_, i) => (
+            <button key={i} onClick={() => setAngle(-theta * i)} aria-label={`Product ${i + 1}`}
+              className={`rounded-full transition-all duration-500 ${
+                i === currentIdx
+                  ? 'w-5 h-1.5 bg-[hsl(var(--sm-gold))] shadow-[0_0_8px_hsl(var(--sm-gold)/0.5)]'
+                  : 'w-1.5 h-1.5 bg-white/20 hover:bg-white/40'
+              }`} />
+          ))}
         </div>
-        <button
-          onClick={goNext}
-          className="w-9 h-9 rounded-full border border-white/20 bg-black/30 backdrop-blur flex items-center justify-center text-white/70 hover:text-white hover:border-white/40 transition-all"
-          aria-label="Next product"
-        >
+        <button onClick={goNext} aria-label="Next product"
+          className="w-8 h-8 rounded-full border border-[hsl(var(--sm-gold)/0.3)] bg-black/40 backdrop-blur-sm flex items-center justify-center text-[hsl(var(--sm-gold)/0.6)] hover:text-[hsl(var(--sm-gold))] hover:border-[hsl(var(--sm-gold)/0.6)] transition-all">
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Floor reflection */}
-      <div
-        className="absolute bottom-12 left-1/2 -translate-x-1/2 w-64 h-8 rounded-full opacity-15"
-        style={{ background: 'radial-gradient(ellipse, hsl(var(--sm-gold) / 0.6), transparent)' }}
-      />
+      {/* Floor glow */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-72 h-10 rounded-full opacity-20"
+        style={{ background: 'radial-gradient(ellipse, hsl(var(--sm-gold) / 0.8), transparent 70%)' }} />
     </div>
   );
 };
 
-/* ─── Main Hero Section ─── */
+/* ─── Main Hero Section — Luxury Premium ─── */
 const HeroSection = () => {
   const { lang } = useLanguage();
   const navigate = useNavigate();
@@ -226,7 +214,7 @@ const HeroSection = () => {
   return (
     <section
       id="home"
-      className="relative w-full min-h-[500px] md:min-h-[600px] lg:min-h-[700px] overflow-hidden"
+      className="relative w-full min-h-[520px] md:min-h-[620px] lg:min-h-[720px] overflow-hidden"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={onTouchStart}
@@ -237,70 +225,111 @@ const HeroSection = () => {
       {slides.map((slide, i) => (
         <div
           key={slide.id}
-          className="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+          className="absolute inset-0 transition-opacity duration-[1.5s] ease-in-out"
           style={{ opacity: i === current ? 1 : 0, zIndex: i === current ? 1 : 0 }}
         >
           <img
             src={slide.image}
             alt={slide.title}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover scale-105"
             loading={i === 0 ? 'eager' : 'lazy'}
           />
+          {/* Luxury dark overlay with gold tint */}
           <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to right, rgba(10,15,30,0.88) 0%, rgba(10,15,30,0.7) 40%, rgba(10,15,30,0.35) 70%, rgba(10,15,30,0.25) 100%)',
+            background: `
+              linear-gradient(135deg, rgba(8,12,24,0.92) 0%, rgba(8,12,24,0.78) 35%, rgba(8,12,24,0.5) 65%, rgba(8,12,24,0.4) 100%),
+              radial-gradient(ellipse at 20% 80%, rgba(180,140,60,0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(180,140,60,0.05) 0%, transparent 50%)
+            `,
           }} />
         </div>
       ))}
 
-      {/* Content: Left text + Right 3D Cube */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between min-h-[500px] md:min-h-[600px] lg:min-h-[700px] gap-8">
+      {/* Decorative gold lines */}
+      <div className="absolute inset-0 z-[2] pointer-events-none overflow-hidden">
+        {/* Top gold accent line */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[hsl(var(--sm-gold)/0.4)] to-transparent" />
+        {/* Diagonal gold line */}
+        <div className="absolute -right-20 top-0 w-[1px] h-[120%] bg-gradient-to-b from-transparent via-[hsl(var(--sm-gold)/0.12)] to-transparent origin-top-right rotate-[15deg]" />
+        <div className="absolute right-[30%] top-0 w-[1px] h-[120%] bg-gradient-to-b from-transparent via-[hsl(var(--sm-gold)/0.06)] to-transparent origin-top-right rotate-[15deg]" />
+        {/* Corner ornaments */}
+        <div className="absolute top-6 left-6 w-16 h-16">
+          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-[hsl(var(--sm-gold)/0.5)] to-transparent" />
+          <div className="absolute top-0 left-0 h-full w-[1px] bg-gradient-to-b from-[hsl(var(--sm-gold)/0.5)] to-transparent" />
+        </div>
+        <div className="absolute bottom-6 right-6 w-16 h-16">
+          <div className="absolute bottom-0 right-0 w-full h-[1px] bg-gradient-to-l from-[hsl(var(--sm-gold)/0.5)] to-transparent" />
+          <div className="absolute bottom-0 right-0 h-full w-[1px] bg-gradient-to-t from-[hsl(var(--sm-gold)/0.5)] to-transparent" />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between min-h-[520px] md:min-h-[620px] lg:min-h-[720px] gap-6">
         {/* Left: Text content */}
-        <div className="flex-1 max-w-xl py-16 md:py-24">
-          <div className="inline-block px-3 py-1 rounded-full border border-white/15 bg-white/5 backdrop-blur-sm mb-5">
-            <span className="text-xs font-medium tracking-widest uppercase text-white/70">
-              {lang === 'en' ? 'Premium Quality' : 'প্রিমিয়াম মান'}
+        <div className="flex-1 max-w-xl py-20 md:py-28">
+          {/* Premium badge */}
+          <div
+            key={`badge-${current}`}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[hsl(var(--sm-gold)/0.3)] bg-[hsl(var(--sm-gold)/0.08)] backdrop-blur-md mb-6 animate-fade-in"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[hsl(var(--sm-gold))]" />
+            <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[hsl(var(--sm-gold))]">
+              {lang === 'en' ? 'Since 1995 • Premium Quality' : 'প্রিমিয়াম মান • ১৯৯৫ থেকে'}
             </span>
           </div>
 
+          {/* Title with gold accent */}
           <h1
             key={`title-${current}`}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-bold text-white leading-tight mb-5 animate-fade-in"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.4rem] font-bold text-white leading-[1.15] mb-6 animate-fade-in"
+            style={{ fontFamily: "'Cormorant Garamond', serif" }}
           >
-            {slides[current].title}
+            <span className="block">{slides[current].title}</span>
+            <span
+              className="block w-20 h-[2px] mt-4 rounded-full bg-gradient-to-r from-[hsl(var(--sm-gold))] to-[hsl(var(--sm-gold)/0.2)]"
+            />
           </h1>
 
           <p
             key={`sub-${current}`}
-            className="text-base sm:text-lg md:text-xl text-white/65 leading-relaxed mb-8 animate-fade-in"
-            style={{ animationDelay: '0.1s' }}
+            className="text-base sm:text-lg text-white/55 leading-relaxed mb-10 animate-fade-in max-w-md"
+            style={{ animationDelay: '0.15s' }}
           >
             {slides[current].subtitle}
           </p>
 
+          {/* CTA Buttons - Luxury style */}
           <div
             key={`cta-${current}`}
-            className="flex flex-wrap gap-3 animate-fade-in"
-            style={{ animationDelay: '0.2s' }}
+            className="flex flex-wrap gap-4 animate-fade-in"
+            style={{ animationDelay: '0.25s' }}
           >
             <button
               onClick={() => handleCta(slides[current].ctaLink)}
-              className="group flex items-center gap-2 px-7 py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-all duration-300 shadow-lg shadow-primary/20"
+              className="group relative flex items-center gap-2.5 px-8 py-4 rounded-none text-sm font-semibold tracking-wider uppercase overflow-hidden transition-all duration-500
+                bg-gradient-to-r from-[hsl(var(--sm-gold))] to-[hsl(var(--sm-gold-dark))]
+                text-[hsl(var(--sm-black))]
+                shadow-[0_4px_24px_hsl(var(--sm-gold)/0.3)]
+                hover:shadow-[0_8px_32px_hsl(var(--sm-gold)/0.5)]
+                hover:scale-[1.02]"
             >
-              {slides[current].ctaText || (lang === 'en' ? 'Browse Products' : 'পণ্য দেখুন')}
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <span className="relative z-10">{slides[current].ctaText || (lang === 'en' ? 'Browse Products' : 'পণ্য দেখুন')}</span>
+              <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--sm-gold-dark))] to-[hsl(var(--sm-gold))] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </button>
             <button
               onClick={() => handleCta('#contact')}
-              className="px-7 py-3.5 rounded-lg border border-white/20 text-white/80 font-semibold text-sm hover:bg-white/10 hover:border-white/40 transition-all duration-300 backdrop-blur-sm"
+              className="px-8 py-4 rounded-none border border-[hsl(var(--sm-gold)/0.4)] text-[hsl(var(--sm-gold)/0.9)] font-semibold text-sm tracking-wider uppercase
+                hover:bg-[hsl(var(--sm-gold)/0.1)] hover:border-[hsl(var(--sm-gold)/0.7)] transition-all duration-500 backdrop-blur-sm"
             >
               {lang === 'en' ? 'Get a Quote' : 'কোটেশন নিন'}
             </button>
           </div>
         </div>
 
-        {/* Right: 3D Cube Carousel */}
+        {/* Right: 3D Carousel */}
         {products.length >= 3 && (
-          <div className="hidden lg:flex items-center justify-center py-16 md:py-24 shrink-0">
+          <div className="hidden lg:flex items-center justify-center py-16 shrink-0">
             <ProductCarousel
               products={products}
               lang={lang}
@@ -310,33 +339,33 @@ const HeroSection = () => {
         )}
       </div>
 
-      {/* Navigation dots + arrows */}
+      {/* Slide navigation - Luxury style */}
       {len > 1 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex items-center gap-5">
           <button onClick={prev} aria-label="Previous"
-            className="w-9 h-9 rounded-full border border-white/20 bg-black/20 backdrop-blur flex items-center justify-center text-white/60 hover:text-white hover:border-white/40 transition-all">
+            className="w-10 h-10 rounded-none border border-[hsl(var(--sm-gold)/0.25)] bg-black/30 backdrop-blur-md flex items-center justify-center text-[hsl(var(--sm-gold)/0.5)] hover:text-[hsl(var(--sm-gold))] hover:border-[hsl(var(--sm-gold)/0.5)] transition-all duration-400">
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {slides.map((_, i) => (
               <button key={i} onClick={() => setCurrent(i)} aria-label={`Slide ${i + 1}`}
-                className={`rounded-full transition-all duration-500 ${
+                className={`transition-all duration-600 ${
                   i === current
-                    ? 'w-8 h-2 bg-primary shadow-md'
-                    : 'w-2 h-2 bg-white/25 hover:bg-white/50'
+                    ? 'w-10 h-[3px] bg-gradient-to-r from-[hsl(var(--sm-gold))] to-[hsl(var(--sm-gold)/0.4)] shadow-[0_0_12px_hsl(var(--sm-gold)/0.4)]'
+                    : 'w-3 h-[2px] bg-white/20 hover:bg-white/40'
                 }`} />
             ))}
           </div>
           <button onClick={next} aria-label="Next"
-            className="w-9 h-9 rounded-full border border-white/20 bg-black/20 backdrop-blur flex items-center justify-center text-white/60 hover:text-white hover:border-white/40 transition-all">
+            className="w-10 h-10 rounded-none border border-[hsl(var(--sm-gold)/0.25)] bg-black/30 backdrop-blur-md flex items-center justify-center text-[hsl(var(--sm-gold)/0.5)] hover:text-[hsl(var(--sm-gold))] hover:border-[hsl(var(--sm-gold)/0.5)] transition-all duration-400">
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 z-10"
-        style={{ background: 'linear-gradient(to top, hsl(var(--foreground)), transparent)' }} />
+      {/* Bottom gradient fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-24 z-[3]"
+        style={{ background: 'linear-gradient(to top, hsl(var(--background)), transparent)' }} />
     </section>
   );
 };
