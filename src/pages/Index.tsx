@@ -5,6 +5,7 @@ import AboutSection from '@/components/AboutSection';
 import ServicesSection from '@/components/ServicesSection';
 import ProcessSection from '@/components/ProcessSection';
 import ProductsSection from '@/components/ProductsSection';
+import ProductSlider from '@/components/ProductSlider';
 import ClientsSection from '@/components/ClientsSection';
 import QuoteRequestForm from '@/components/QuoteRequestForm';
 import ContactSection from '@/components/ContactSection';
@@ -14,13 +15,14 @@ const sectionComponents: Record<string, React.ComponentType> = {
   about: AboutSection,
   services: ServicesSection,
   process: ProcessSection,
+  productSlider: ProductSlider,
   products: ProductsSection,
   clients: ClientsSection,
   quote: QuoteRequestForm,
   contact: ContactSection,
 };
 
-const defaultOrder = ['hero', 'about', 'services', 'process', 'products', 'clients', 'quote', 'contact'];
+const defaultOrder = ['hero', 'about', 'services', 'process', 'productSlider', 'products', 'clients', 'quote', 'contact'];
 
 const Index = () => {
   const { data: config } = useQuery({
