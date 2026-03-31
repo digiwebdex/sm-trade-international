@@ -24,14 +24,12 @@ const HeroSection = () => {
   const isFirstLoad = !hasAnimated;
 
   useEffect(() => { if (!hasAnimated) hasAnimated = true; }, []);
-
   const anim = (delay: string) =>
     isFirstLoad ? { animation: `heroFadeUp 0.7s ${delay} ease-out both` } : {};
 
   const title = get('hero', 'title', t('hero.title'));
   const subtitle = get('hero', 'subtitle', t('hero.subtitle'));
   const ctaPrimary = get('hero', 'cta_primary', t('hero.cta'));
-
   const stats = [1, 2, 3, 4].map(n => ({
     value: get('hero', `stat${n}_value`, n === 1 ? '500+' : n === 2 ? '10+' : n === 3 ? '1000+' : '50+'),
     label: get('hero', `stat${n}_label`, n === 1 ? 'Clients' : n === 2 ? 'Years' : n === 3 ? 'Products' : 'Countries'),
@@ -62,12 +60,8 @@ const HeroSection = () => {
   const len = items.length;
   const safeIdx = (i: number) => ((i % len) + len) % len;
 
-  const next = useCallback(() => {
-    if (len > 1) setCurrent(c => (c + 1) % len);
-  }, [len]);
-  const prev = useCallback(() => {
-    if (len > 1) setCurrent(c => (c - 1 + len) % len);
-  }, [len]);
+  const next = useCallback(() => { if (len > 1) setCurrent(c => (c + 1) % len); }, [len]);
+  const prev = useCallback(() => { if (len > 1) setCurrent(c => (c - 1 + len) % len); }, [len]);
 
   useEffect(() => {
     if (paused || len < 2) return;
@@ -79,83 +73,14 @@ const HeroSection = () => {
   const onTouchMove = (e: TouchEvent) => { touchDelta.current = e.touches[0].clientX - touchStartX.current; };
   const onTouchEnd = () => { if (touchDelta.current > 50) prev(); else if (touchDelta.current < -50) next(); setPaused(false); };
 
-  // Coverflow card positions: left, center, right
-  const getCardStyle = (position: 'left' | 'center' | 'right'): React.CSSProperties => {
-    const base: React.CSSProperties = {
-      position: 'absolute',
-      transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-      borderRadius: '16px',
-      overflow: 'hidden',
-      background: 'linear-gradient(145deg, #ffffff 0%, #f8f6f3 100%)',
-      border: '1px solid rgba(255,255,255,0.6)',
-      cursor: 'pointer',
-    };
-
-    switch (position) {
-      case 'left':
-        return {
-          ...base,
-          width: '140px', height: '180px',
-          left: '0', top: '50%',
-          transform: 'translateY(-50%) rotateY(25deg) scale(0.85)',
-          boxShadow: '-10px 15px 40px -10px rgba(0,0,0,0.2)',
-          zIndex: 1, opacity: 0.7,
-          transformOrigin: 'right center',
-        };
-      case 'center':
-        return {
-          ...base,
-          width: '220px', height: '280px',
-          left: '50%', top: '50%',
-          transform: 'translate(-50%, -50%) rotateY(0deg) scale(1)',
-          boxShadow: '0 30px 60px -15px rgba(0,0,0,0.25), 0 0 40px -10px hsl(var(--sm-gold) / 0.2)',
-          zIndex: 10, opacity: 1,
-        };
-      case 'right':
-        return {
-          ...base,
-          width: '140px', height: '180px',
-          right: '0', top: '50%',
-          transform: 'translateY(-50%) rotateY(-25deg) scale(0.85)',
-          boxShadow: '10px 15px 40px -10px rgba(0,0,0,0.2)',
-          zIndex: 1, opacity: 0.7,
-          transformOrigin: 'left center',
-        };
-    }
-  };
-
-  const ProductCard = ({ idx, position }: { idx: number; position: 'left' | 'center' | 'right' }) => {
-    const item = items[idx];
-    if (!item) return null;
-    return (
-      <div
-        style={getCardStyle(position)}
-        onClick={() => {
-          if (position === 'center') navigate(`/product/${item.id}`);
-          else if (position === 'left') prev();
-          else next();
-        }}
-      >
-        {/* Corner accents for center card */}
-        {position === 'center' && (
-          <>
-            <div className="absolute top-2.5 left-2.5 w-5 h-5 border-t-2 border-l-2 border-accent/30 rounded-tl-lg" />
-            <div className="absolute top-2.5 right-2.5 w-5 h-5 border-t-2 border-r-2 border-accent/30 rounded-tr-lg" />
-            <div className="absolute bottom-2.5 left-2.5 w-5 h-5 border-b-2 border-l-2 border-accent/30 rounded-bl-lg" />
-            <div className="absolute bottom-2.5 right-2.5 w-5 h-5 border-b-2 border-r-2 border-accent/30 rounded-br-lg" />
-          </>
-        )}
-        <div className="w-full h-full p-3 flex items-center justify-center">
-          <OptimizedImage
-            src={item.img} alt={item.label}
-            className="w-full h-full object-contain drop-shadow-md"
-            sizes={position === 'center' ? '220px' : '140px'}
-            blurPlaceholder={false}
-          />
-        </div>
-      </div>
-    );
-  };
+  // Build visible card positions: far-left, left, center, right, far-right
+  const positions = [
+    { offset: -2, x: '-110%', scale: 0.5, rotateY: 45, z: -100, opacity: 0.3, blur: 2 },
+    { offset: -1, x: '-60%',  scale: 0.72, rotateY: 30, z: -50, opacity: 0.65, blur: 0 },
+    { offset: 0,  x: '-50%',  scale: 1,    rotateY: 0,  z: 0,   opacity: 1, blur: 0 },
+    { offset: 1,  x: '-40%',  scale: 0.72, rotateY: -30, z: -50, opacity: 0.65, blur: 0 },
+    { offset: 2,  x: '10%',   scale: 0.5,  rotateY: -45, z: -100, opacity: 0.3, blur: 2 },
+  ];
 
   return (
     <section id="home" className="relative bg-foreground" style={{ overflow: 'clip' }}>
@@ -164,7 +89,7 @@ const HeroSection = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-foreground/90 via-foreground/70 to-primary/30" />
 
       <div className="relative z-10 container mx-auto px-4 pt-4 pb-8 lg:pt-6 lg:pb-12">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center min-h-[500px] lg:min-h-[560px]">
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center min-h-[500px] lg:min-h-[560px]">
 
           {/* Left — Copy */}
           <div className="flex flex-col justify-center" style={anim('0s')}>
@@ -204,60 +129,124 @@ const HeroSection = () => {
             </div>
           </div>
 
-          {/* Right — Coverflow Slider */}
+          {/* Right — Premium Coverflow Carousel */}
           {len > 0 && (
             <div
               className="relative flex flex-col items-center justify-center touch-pan-y"
-              style={{ ...anim('0.4s'), perspective: '1000px' }}
+              style={anim('0.4s')}
               onMouseEnter={() => setPaused(true)}
               onMouseLeave={() => setPaused(false)}
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
             >
-              {/* Ambient glow */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-accent/10 blur-[80px] pointer-events-none" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[45%] w-40 h-40 rounded-full bg-primary/15 blur-[50px] pointer-events-none" />
+              {/* Soft ambient glow behind cards */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-accent/8 blur-[80px] pointer-events-none" />
 
               {/* Cards container */}
-              <div className="relative w-full max-w-[420px] h-[300px] sm:h-[340px] mx-auto mb-4"
-                style={{ transformStyle: 'preserve-3d' }}>
-                {len >= 3 && <ProductCard idx={safeIdx(current - 1)} position="left" />}
-                <ProductCard idx={safeIdx(current)} position="center" />
-                {len >= 2 && <ProductCard idx={safeIdx(current + 1)} position="right" />}
+              <div className="relative w-full max-w-[480px] h-[320px] sm:h-[360px] mx-auto"
+                style={{ perspective: '1200px' }}>
 
-                {/* Nav arrows */}
+                {positions.map(pos => {
+                  if (len < 3 && Math.abs(pos.offset) > 1) return null;
+                  if (len < 2 && pos.offset !== 0) return null;
+                  const idx = safeIdx(current + pos.offset);
+                  const item = items[idx];
+                  if (!item) return null;
+                  const isCenter = pos.offset === 0;
+
+                  return (
+                    <div
+                      key={`${pos.offset}-${idx}`}
+                      className="absolute top-1/2"
+                      style={{
+                        left: '50%',
+                        width: isCenter ? '240px' : Math.abs(pos.offset) === 1 ? '180px' : '130px',
+                        height: isCenter ? '300px' : Math.abs(pos.offset) === 1 ? '230px' : '170px',
+                        transform: `translateX(${pos.x}) translateY(-50%) translateZ(${pos.z}px) rotateY(${pos.rotateY}deg) scale(${pos.scale})`,
+                        opacity: pos.opacity,
+                        zIndex: 10 - Math.abs(pos.offset) * 3,
+                        transition: 'all 0.65s cubic-bezier(0.4, 0, 0.2, 1)',
+                        filter: pos.blur ? `blur(${pos.blur}px)` : 'none',
+                        cursor: isCenter ? 'pointer' : 'pointer',
+                      }}
+                      onClick={() => {
+                        if (isCenter) navigate(`/product/${item.id}`);
+                        else if (pos.offset < 0) prev();
+                        else next();
+                      }}
+                    >
+                      <div
+                        className="w-full h-full rounded-2xl overflow-hidden relative"
+                        style={{
+                          background: 'linear-gradient(160deg, #ffffff 0%, #f5f3ef 50%, #ede9e3 100%)',
+                          boxShadow: isCenter
+                            ? '0 30px 80px -20px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,0.9)'
+                            : '0 15px 40px -10px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.1)',
+                        }}
+                      >
+                        {/* Gold accent line at top for center card */}
+                        {isCenter && (
+                          <div className="absolute top-0 left-4 right-4 h-[2px] bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
+                        )}
+
+                        {/* Product image */}
+                        <div className={`w-full ${isCenter ? 'h-[calc(100%-44px)]' : 'h-full'} p-4 flex items-center justify-center`}>
+                          <OptimizedImage
+                            src={item.img}
+                            alt={item.label}
+                            className="w-full h-full object-contain drop-shadow-lg"
+                            sizes={isCenter ? '240px' : '180px'}
+                            blurPlaceholder={false}
+                          />
+                        </div>
+
+                        {/* Label — only on center card */}
+                        {isCenter && (
+                          <div className="absolute bottom-0 inset-x-0 h-11 flex items-center justify-center bg-gradient-to-t from-white/80 to-white/20 backdrop-blur-sm">
+                            <span className="text-xs font-bold text-foreground/80 truncate px-3 tracking-wide uppercase"
+                              style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                              {item.label}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Subtle shine overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none rounded-2xl" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Controls row */}
+              <div className="flex items-center gap-4 mt-2">
                 <button onClick={prev}
-                  className="absolute -left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-white/10 bg-white/5 backdrop-blur-xl flex items-center justify-center text-white/50 hover:text-white hover:border-accent/50 hover:bg-accent/15 hover:scale-110 transition-all duration-300 z-20">
+                  className="w-10 h-10 rounded-full border border-white/15 bg-white/5 backdrop-blur-xl flex items-center justify-center text-white/60 hover:text-white hover:border-accent/40 hover:bg-accent/10 transition-all duration-300 hover:scale-110">
                   <ChevronLeft className="w-5 h-5" />
                 </button>
+
+                <div className="flex items-center gap-2">
+                  {items.slice(0, Math.min(len, 10)).map((_, i) => (
+                    <button key={i} onClick={() => setCurrent(i)}
+                      className={`rounded-full transition-all duration-500 ${
+                        i === current
+                          ? 'w-7 h-2.5 bg-gradient-to-r from-accent to-accent/70 shadow-md shadow-accent/30'
+                          : 'w-2.5 h-2.5 bg-white/15 hover:bg-white/35'
+                      }`} />
+                  ))}
+                </div>
+
                 <button onClick={next}
-                  className="absolute -right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-white/10 bg-white/5 backdrop-blur-xl flex items-center justify-center text-white/50 hover:text-white hover:border-accent/50 hover:bg-accent/15 hover:scale-110 transition-all duration-300 z-20">
+                  className="w-10 h-10 rounded-full border border-white/15 bg-white/5 backdrop-blur-xl flex items-center justify-center text-white/60 hover:text-white hover:border-accent/40 hover:bg-accent/10 transition-all duration-300 hover:scale-110">
                   <ChevronRight className="w-5 h-5" />
                 </button>
-              </div>
 
-              {/* Active product label */}
-              <div className="flex items-center gap-3">
-                <div className="text-sm font-semibold px-5 py-2 rounded-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground shadow-lg shadow-accent/30 transition-all duration-500"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                  {items[current]?.label}
-                </div>
                 <button onClick={() => setPaused(p => !p)}
-                  className="w-9 h-9 rounded-full border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center text-white/40 hover:text-white/70 hover:border-accent/30 transition-all duration-300"
+                  className="w-8 h-8 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/30 hover:text-white/60 transition-all duration-300"
                   title={paused ? 'Play' : 'Pause'}>
-                  {paused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+                  {paused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
                 </button>
-              </div>
-
-              {/* Dots */}
-              <div className="flex items-center gap-1.5 mt-4">
-                {items.slice(0, Math.min(len, 12)).map((_, i) => (
-                  <button key={i} onClick={() => setCurrent(i)}
-                    className={`rounded-full transition-all duration-500 ${
-                      i === current ? 'w-6 h-2 bg-accent shadow-sm shadow-accent/40' : 'w-2 h-2 bg-white/20 hover:bg-white/40'
-                    }`} />
-                ))}
               </div>
             </div>
           )}
