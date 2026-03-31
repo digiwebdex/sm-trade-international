@@ -218,18 +218,44 @@ const Footer = () => {
               <span className="text-[hsl(var(--sm-gold))]/50 mr-2">—</span>
               {contactTitle}
             </h4>
-            <div className="space-y-4 text-sm text-primary-foreground/60 mt-2">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-full bg-[hsl(var(--sm-gold))]/15 border border-[hsl(var(--sm-gold))]/25 flex items-center justify-center shrink-0 mt-0.5">
-                  <MapPin className="h-4 w-4 text-[hsl(var(--sm-gold))]" />
+            <div className="space-y-5 text-sm text-primary-foreground/60 mt-2">
+              {/* Savar Office */}
+              <div>
+                <span className="text-[hsl(var(--sm-gold))] font-semibold text-xs uppercase tracking-wider block mb-1">
+                  {lang === 'bn' ? 'সাভার অফিস' : 'SAVAR OFFICE'}
+                </span>
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-full bg-[hsl(var(--sm-gold))]/15 border border-[hsl(var(--sm-gold))]/25 flex items-center justify-center shrink-0 mt-0.5">
+                    <MapPin className="h-4 w-4 text-[hsl(var(--sm-gold))]" />
+                  </div>
+                  <span className="leading-relaxed">
+                    B-25/4, Al-Baraka Super Market, Savar Bazar Bus-Stand, Savar, Dhaka-1340.
+                  </span>
                 </div>
-                <span className="leading-relaxed">{address}</span>
               </div>
+              {/* Banani Office */}
+              <div>
+                <span className="text-[hsl(var(--sm-gold))] font-semibold text-xs uppercase tracking-wider block mb-1">
+                  {lang === 'bn' ? 'বনানী অফিস' : 'BANANI OFFICE'}
+                </span>
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-full bg-[hsl(var(--sm-gold))]/15 border border-[hsl(var(--sm-gold))]/25 flex items-center justify-center shrink-0 mt-0.5">
+                    <MapPin className="h-4 w-4 text-[hsl(var(--sm-gold))]" />
+                  </div>
+                  <span className="leading-relaxed">
+                    House # 37, Block # C, Road # 6, Banani, Dhaka-1213.
+                  </span>
+                </div>
+              </div>
+              {/* Emails */}
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-[hsl(var(--sm-gold))]/15 border border-[hsl(var(--sm-gold))]/25 flex items-center justify-center shrink-0">
                   <Mail className="h-4 w-4 text-[hsl(var(--sm-gold))]" />
                 </div>
-                <a href={`mailto:${email}`} className="hover:text-[hsl(var(--sm-gold))] transition-colors">{email}</a>
+                <div className="flex flex-col gap-1">
+                  <a href="mailto:support@smtradeint.com" className="hover:text-[hsl(var(--sm-gold))] transition-colors">support@smtradeint.com</a>
+                  <a href="mailto:info@smtradeint.com" className="hover:text-[hsl(var(--sm-gold))] transition-colors">info@smtradeint.com</a>
+                </div>
               </div>
             </div>
           </div>
@@ -247,14 +273,23 @@ const Footer = () => {
               <span className="text-[hsl(var(--sm-gold))]/50 mr-2">—</span>
               {lang === 'bn' ? 'ফোন নম্বর' : 'Phone Numbers'}
             </h4>
-            <div className="space-y-3 text-sm text-primary-foreground/60 mt-2">
-              {phone.split(',').map((p, i) => (
+            <div className="space-y-2.5 text-sm text-primary-foreground/60 mt-2">
+              {[
+                '+02224446664',
+                '+8801867666888',
+                '+8801619959625',
+                '+8801619959626',
+                '+8801619959627',
+                '+8801619959628',
+                '+8801619959629',
+                '+8801619959630',
+              ].map((p, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-[hsl(var(--sm-gold))]/15 border border-[hsl(var(--sm-gold))]/25 flex items-center justify-center shrink-0">
-                    <Phone className="h-4 w-4 text-[hsl(var(--sm-gold))]" />
+                  <div className="w-8 h-8 rounded-full bg-[hsl(var(--sm-gold))]/15 border border-[hsl(var(--sm-gold))]/25 flex items-center justify-center shrink-0">
+                    <Phone className="h-3.5 w-3.5 text-[hsl(var(--sm-gold))]" />
                   </div>
-                  <a href={`tel:${p.trim()}`} className="hover:text-[hsl(var(--sm-gold))] transition-colors">
-                    {p.trim()}
+                  <a href={`tel:${p}`} className="hover:text-[hsl(var(--sm-gold))] transition-colors">
+                    {p}
                   </a>
                 </div>
               ))}
