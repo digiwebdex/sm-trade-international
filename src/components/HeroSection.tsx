@@ -6,16 +6,21 @@ import { supabase } from '@/lib/apiClient';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
+import OptimizedImage from '@/components/OptimizedImage';
+import { productSlug } from '@/lib/productSlug';
 
 const SPEED = 5000;
+const PRODUCT_SPEED = 3000;
 
 const HeroSection = () => {
   const { lang } = useLanguage();
   const navigate = useNavigate();
   const { get } = useSiteSettings();
   const [current, setCurrent] = useState(0);
+  const [productIdx, setProductIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const productTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartX = useRef(0);
   const touchDelta = useRef(0);
 
@@ -32,6 +37,24 @@ const HeroSection = () => {
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  // Fetch featured products for the slider
+  const { data: featuredProducts } = useQuery({
+    queryKey: ['hero-featured-products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name_en, name_bn, image_url, product_code, category_id, unit_price')
+        .eq('is_active', true)
+        .order('sort_order')
+        .limit(8);
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const products = featuredProducts ?? [];
 
   // Build slides array — use DB slides or fallback
   const slides = (heroSlides && heroSlides.length > 0)
@@ -60,11 +83,21 @@ const HeroSection = () => {
   const next = useCallback(() => { if (len > 1) setCurrent(c => (c + 1) % len); }, [len]);
   const prev = useCallback(() => { if (len > 1) setCurrent(c => (c - 1 + len) % len); }, [len]);
 
+  // Hero slide autoplay
   useEffect(() => {
     if (paused || len < 2) return;
     timerRef.current = setInterval(next, SPEED);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [next, paused, len]);
+
+  // Product slider autoplay
+  useEffect(() => {
+    if (products.length < 2) return;
+    productTimerRef.current = setInterval(() => {
+      setProductIdx(c => (c + 1) % products.length);
+    }, PRODUCT_SPEED);
+    return () => { if (productTimerRef.current) clearInterval(productTimerRef.current); };
+  }, [products.length]);
 
   const onTouchStart = (e: TouchEvent) => { touchStartX.current = e.touches[0].clientX; touchDelta.current = 0; setPaused(true); };
   const onTouchMove = (e: TouchEvent) => { touchDelta.current = e.touches[0].clientX - touchStartX.current; };
@@ -79,6 +112,16 @@ const HeroSection = () => {
     } else {
       navigate(link);
     }
+  };
+
+  // Show 3 products at a time on desktop, 1 on mobile
+  const getVisibleProducts = () => {
+    if (products.length === 0) return [];
+    const visible = [];
+    for (let i = 0; i < Math.min(3, products.length); i++) {
+      visible.push(products[(productIdx + i) % products.length]);
+    }
+    return visible;
   };
 
   return (
@@ -112,8 +155,9 @@ const HeroSection = () => {
       ))}
 
       {/* Content overlay */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center min-h-[500px] md:min-h-[600px] lg:min-h-[700px]">
-        <div className="max-w-2xl py-16 md:py-24">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col lg:flex-row items-center min-h-[500px] md:min-h-[600px] lg:min-h-[700px] gap-8">
+        {/* Left: Text content */}
+        <div className="flex-1 max-w-2xl py-16 md:py-24">
           {/* Badge */}
           <div className="inline-block px-3 py-1 rounded-full border border-white/15 bg-white/5 backdrop-blur-sm mb-5">
             <span className="text-xs font-medium tracking-widest uppercase text-white/70">
@@ -121,7 +165,7 @@ const HeroSection = () => {
             </span>
           </div>
 
-          {/* Title — animate on slide change */}
+          {/* Title */}
           <h1
             key={`title-${current}`}
             className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-5 animate-fade-in"
@@ -159,6 +203,60 @@ const HeroSection = () => {
             </button>
           </div>
         </div>
+
+        {/* Right: Product slider */}
+        {products.length > 0 && (
+          <div className="hidden lg:flex flex-col items-center gap-4 py-16 md:py-24 w-[380px] shrink-0">
+            <div className="grid grid-cols-1 gap-4 w-full">
+              {getVisibleProducts().map((product, i) => (
+                <div
+                  key={`${product.id}-${i}`}
+                  onClick={() => navigate(`/product/${productSlug(product)}`)}
+                  className="group flex items-center gap-4 bg-white/10 backdrop-blur-md border border-white/10 rounded-xl p-3 cursor-pointer hover:bg-white/15 hover:border-white/25 transition-all duration-500 animate-fade-in"
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                >
+                  <div className="w-20 h-20 rounded-lg bg-white/10 overflow-hidden shrink-0">
+                    <OptimizedImage
+                      src={product.image_url || '/placeholder.svg'}
+                      alt={lang === 'en' ? product.name_en : product.name_bn}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-white font-semibold text-sm truncate">
+                      {lang === 'en' ? product.name_en : product.name_bn}
+                    </h3>
+                    {product.unit_price > 0 && (
+                      <p className="text-primary text-xs mt-1">
+                        ৳ {product.unit_price.toLocaleString()}
+                      </p>
+                    )}
+                    <span className="text-white/40 text-xs group-hover:text-white/60 transition-colors">
+                      {lang === 'en' ? 'View Details →' : 'বিস্তারিত দেখুন →'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Product slider dots */}
+            {products.length > 3 && (
+              <div className="flex gap-1.5 mt-2">
+                {products.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setProductIdx(i)}
+                    className={`rounded-full transition-all duration-300 ${
+                      i === productIdx
+                        ? 'w-5 h-1.5 bg-primary'
+                        : 'w-1.5 h-1.5 bg-white/20 hover:bg-white/40'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Navigation dots + arrows */}
