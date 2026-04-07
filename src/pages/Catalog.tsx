@@ -222,7 +222,8 @@ const Catalog = () => {
       const q = search.toLowerCase();
       result = result.filter(p =>
         p.titleEn.toLowerCase().includes(q) || p.titleBn.includes(q) ||
-        p.descEn.toLowerCase().includes(q)
+        p.descEn.toLowerCase().includes(q) ||
+        (p.productCode && p.productCode.toLowerCase().includes(q))
       );
     }
     return result;
