@@ -1,47 +1,24 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/apiClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Upload, Image as ImageIcon, Search, ChevronLeft, ChevronRight, X, CheckSquare, Square, PackagePlus, Star, Package, Filter, MoreVertical, Eye, EyeOff, Copy, ToggleLeft } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, X, PackagePlus, Package, Filter, MoreVertical, Eye, EyeOff, ToggleLeft, Image as ImageIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import BulkUploadZone, { type FileItem } from '@/components/admin/BulkUploadZone';
-import ColorVariantManager from '@/components/admin/ColorVariantManager';
-import ProductImageManager from '@/components/admin/ProductImageManager';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const PAGE_SIZE = 12;
-
-interface ProductForm {
-  name_en: string;
-  name_bn: string;
-  description_en: string;
-  description_bn: string;
-  short_description_en: string;
-  short_description_bn: string;
-  category_id: string;
-  image_url: string;
-  is_active: boolean;
-  product_code: string;
-  unit_price: number;
-}
-
-const emptyForm: ProductForm = {
-  name_en: '', name_bn: '', description_en: '', description_bn: '',
-  short_description_en: '', short_description_bn: '',
-  category_id: '', image_url: '', is_active: true, product_code: '', unit_price: 0,
-};
 
 const slugify = (str: string) =>
   str.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
@@ -49,20 +26,15 @@ const slugify = (str: string) =>
 const AdminProducts = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<ProductForm>(emptyForm);
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [deleteName, setDeleteName] = useState('');
-
   const [bulkFiles, setBulkFiles] = useState<FileItem[]>([]);
   const [bulkCategory, setBulkCategory] = useState('');
   const [bulkImporting, setBulkImporting] = useState(false);
+
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteName, setDeleteName] = useState('');
 
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
@@ -111,70 +83,6 @@ const AdminProducts = () => {
 
   const activeCount = products.filter(p => p.is_active).length;
   const inactiveCount = products.filter(p => !p.is_active).length;
-
-  const handleImageUpload = async (file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: 'File too large', description: 'Max 5MB per image.', variant: 'destructive' });
-      return;
-    }
-    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
-      toast({ title: 'Invalid file type', description: 'Only JPG, PNG, WebP, GIF allowed.', variant: 'destructive' });
-      return;
-    }
-    setUploading(true);
-    const ext = file.name.split('.').pop();
-    const path = `products/${Date.now()}.${ext}`;
-    const { data: uploadData, error } = await supabase.storage.from('cms-images').upload(path, file);
-    if (error) {
-      toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
-      setUploading(false);
-      return;
-    }
-    const publicUrl = uploadData?.publicUrl || supabase.storage.from('cms-images').getPublicUrl(path).data.publicUrl;
-    setForm(f => ({ ...f, image_url: publicUrl }));
-    setUploading(false);
-  };
-
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const payload: any = {
-        name_en: form.name_en,
-        name_bn: form.name_bn,
-        description_en: form.description_en,
-        description_bn: form.description_bn,
-        short_description_en: form.short_description_en,
-        short_description_bn: form.short_description_bn,
-        category_id: form.category_id || null,
-        image_url: form.image_url,
-        is_active: form.is_active,
-        product_code: form.product_code || slugify(form.name_en),
-        unit_price: form.unit_price,
-      };
-      if (editId) {
-        const { error } = await supabase.from('products').update(payload).eq('id', editId);
-        if (error) throw error;
-        return editId;
-      } else {
-        const { data, error } = await supabase
-          .from('products')
-          .insert({ ...payload, sort_order: products.length + 1 })
-          .select('id')
-          .single();
-        if (error) throw error;
-        return data?.id ?? null;
-      }
-    },
-    onSuccess: (newId) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-      toast({ title: editId ? 'Product updated' : 'Product created successfully!' });
-      if (!editId && newId) {
-        setEditId(newId);
-      } else {
-        closeDialog();
-      }
-    },
-    onError: (err: Error) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
-  });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -232,26 +140,6 @@ const AdminProducts = () => {
     },
     onError: (err: Error) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
   });
-
-  const openEdit = (prod: typeof products[0]) => {
-    setEditId(prod.id);
-    setForm({
-      name_en: prod.name_en,
-      name_bn: prod.name_bn,
-      description_en: prod.description_en ?? '',
-      description_bn: prod.description_bn ?? '',
-      short_description_en: (prod as any).short_description_en ?? '',
-      short_description_bn: (prod as any).short_description_bn ?? '',
-      category_id: prod.category_id ?? '',
-      image_url: prod.image_url ?? '',
-      is_active: prod.is_active,
-      product_code: (prod as any).product_code ?? '',
-      unit_price: Number((prod as any).unit_price) || 0,
-    });
-    setDialogOpen(true);
-  };
-
-  const closeDialog = () => { setDialogOpen(false); setEditId(null); setForm(emptyForm); };
 
   const handleBulkImport = useCallback(async () => {
     const pending = bulkFiles.filter(f => f.status === 'pending');
@@ -322,9 +210,7 @@ const AdminProducts = () => {
             <Package className="h-6 w-6 text-primary" />
             Products
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage your product catalog
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">Manage your product catalog</p>
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={bulkOpen} onOpenChange={v => { if (!v) closeBulk(); else setBulkOpen(true); }}>
@@ -336,9 +222,7 @@ const AdminProducts = () => {
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Bulk Add Products</DialogTitle></DialogHeader>
               <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Drop multiple images (max 5MB each). Product names derived from filenames.
-                </p>
+                <p className="text-sm text-muted-foreground">Drop multiple images (max 5MB each). Product names derived from filenames.</p>
                 <div>
                   <label className="text-sm font-medium">Category (optional)</label>
                   <Select value={bulkCategory} onValueChange={setBulkCategory}>
@@ -360,172 +244,9 @@ const AdminProducts = () => {
             </DialogContent>
           </Dialog>
 
-          <Dialog open={dialogOpen} onOpenChange={v => { if (!v) closeDialog(); else setDialogOpen(true); }}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-2">
-                <Plus className="h-4 w-4" /> Add Product
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{editId ? 'Edit Product' : 'Add Product'}</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={e => { e.preventDefault(); saveMutation.mutate(); }} className="space-y-4">
-                {/* Name */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Name (English) *</label>
-                    <Input
-                      value={form.name_en}
-                      onChange={e => setForm(f => ({
-                        ...f, name_en: e.target.value,
-                        product_code: f.product_code || slugify(e.target.value),
-                      }))}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Name (বাংলা)</label>
-                    <Input value={form.name_bn} onChange={e => setForm(f => ({ ...f, name_bn: e.target.value }))} />
-                  </div>
-                </div>
-
-                {/* Product Code */}
-                <div>
-                  <label className="text-sm font-medium">Product Code / Slug</label>
-                  <Input
-                    value={form.product_code}
-                    onChange={e => setForm(f => ({ ...f, product_code: e.target.value }))}
-                    placeholder="auto-generated from name"
-                    className="font-mono text-sm"
-                  />
-                </div>
-
-                {/* Category & Price */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Category</label>
-                    <Select value={form.category_id} onValueChange={v => setForm(f => ({ ...f, category_id: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                      <SelectContent>
-                        {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name_en}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Price (৳)</label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={form.unit_price || ''}
-                      onChange={e => setForm(f => ({ ...f, unit_price: Math.max(0, Number(e.target.value)) }))}
-                      placeholder="Enter price"
-                      className="text-lg font-semibold"
-                    />
-                  </div>
-                </div>
-
-                {/* Short Description */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Short Description (EN)</label>
-                    <Input value={form.short_description_en} onChange={e => setForm(f => ({ ...f, short_description_en: e.target.value }))} placeholder="Brief one-liner" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Short Description (বাংলা)</label>
-                    <Input value={form.short_description_bn} onChange={e => setForm(f => ({ ...f, short_description_bn: e.target.value }))} placeholder="সংক্ষিপ্ত বিবরণ" />
-                  </div>
-                </div>
-
-                {/* Full Description */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Description (English)</label>
-                    <Textarea value={form.description_en} onChange={e => setForm(f => ({ ...f, description_en: e.target.value }))} rows={3} />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Description (বাংলা)</label>
-                    <Textarea value={form.description_bn} onChange={e => setForm(f => ({ ...f, description_bn: e.target.value }))} rows={3} />
-                  </div>
-                </div>
-
-                {/* Product Image */}
-                {editId ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium">Product Images</label>
-                      {form.image_url && (
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                          <Star className="h-3 w-3 text-amber-500 fill-amber-500" /> Featured image set
-                        </span>
-                      )}
-                    </div>
-                    {form.image_url && (
-                      <div className="relative">
-                        <img src={form.image_url} alt="Featured" className="w-full h-32 object-contain rounded-lg border bg-muted/30 p-2" />
-                        <div className="absolute top-2 left-2 bg-amber-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <Star className="h-3 w-3 fill-current" /> Featured
-                        </div>
-                        <Button type="button" size="sm" variant="secondary" className="absolute bottom-2 right-2"
-                          onClick={() => setForm(f => ({ ...f, image_url: '' }))}>
-                          <X className="h-3 w-3 mr-1" /> Remove
-                        </Button>
-                      </div>
-                    )}
-                    <ProductImageManager
-                      productId={editId}
-                      featuredImageUrl={form.image_url}
-                      onSetFeatured={(url) => setForm(f => ({ ...f, image_url: url }))}
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <label className="text-sm font-medium">Product Image</label>
-                    <input ref={fileRef} type="file" accept="image/*" className="hidden"
-                      onChange={e => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageUpload(file);
-                        e.currentTarget.value = '';
-                      }} />
-                    {form.image_url ? (
-                      <div className="relative mt-2">
-                        <img src={form.image_url} alt="Preview" className="w-full h-40 object-contain rounded-lg border bg-muted/30 p-2" />
-                        <div className="absolute bottom-2 right-2 flex gap-1.5">
-                          <Button type="button" size="sm" variant="secondary" onClick={() => fileRef.current?.click()}>Change</Button>
-                          <Button type="button" size="sm" variant="secondary" onClick={() => setForm(f => ({ ...f, image_url: '' }))}>
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <Button type="button" variant="outline" className="w-full mt-2 h-32 flex-col gap-2"
-                        onClick={() => fileRef.current?.click()} disabled={uploading}>
-                        {uploading ? <span className="text-sm">Uploading...</span> : (
-                          <><Upload className="h-6 w-6 text-muted-foreground" /><span className="text-sm text-muted-foreground">Click to upload (max 5MB)</span></>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                )}
-
-                {/* Color Variants (only show when editing existing product) */}
-                {editId && (
-                  <ColorVariantManager productId={editId} basePrice={form.unit_price} />
-                )}
-
-                <div className="flex items-center gap-2">
-                  <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />
-                  <label className="text-sm">Active (visible on site)</label>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={closeDialog}>Cancel</Button>
-                  <Button type="submit" disabled={saveMutation.isPending}>
-                    {saveMutation.isPending ? 'Saving...' : editId ? 'Update Product' : 'Save Product'}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Button size="sm" className="gap-2" onClick={() => navigate('/admin/products/new')}>
+            <Plus className="h-4 w-4" /> Add Product
+          </Button>
         </div>
       </div>
 
@@ -574,10 +295,10 @@ const AdminProducts = () => {
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search by name, code, or category…" 
+            <Input
+              placeholder="Search by name, code, or category…"
               value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1); }} 
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
               className="pl-10 bg-muted/30 border-border/50 focus:bg-background"
             />
           </div>
@@ -613,10 +334,7 @@ const AdminProducts = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {paginated.length > 0 && (
-              <button 
-                onClick={toggleSelectAll}
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <button onClick={toggleSelectAll} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
                 <Checkbox
                   checked={selected.size === paginated.length && paginated.length > 0}
                   onCheckedChange={() => toggleSelectAll()}
@@ -633,9 +351,7 @@ const AdminProducts = () => {
 
           {selected.size > 0 && (
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">
-                {selected.size} selected
-              </Badge>
+              <Badge variant="secondary" className="text-xs">{selected.size} selected</Badge>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1">
@@ -686,7 +402,7 @@ const AdminProducts = () => {
             {products.length === 0 ? 'Add your first product to get started.' : 'Try adjusting your search or filters.'}
           </p>
           {products.length === 0 && (
-            <Button onClick={() => setDialogOpen(true)} className="gap-2">
+            <Button onClick={() => navigate('/admin/products/new')} className="gap-2">
               <Plus className="h-4 w-4" /> Add Product
             </Button>
           )}
@@ -703,26 +419,22 @@ const AdminProducts = () => {
               <div
                 key={prod.id}
                 className={cn(
-                  'group bg-background border rounded-xl overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-primary/20',
+                  'group bg-background border rounded-xl overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-primary/20 cursor-pointer',
                   isSelected ? 'ring-2 ring-primary border-primary/30 shadow-md' : 'border-border'
                 )}
+                onClick={() => navigate(`/admin/products/edit/${prod.id}`)}
               >
                 {/* Image Area */}
                 <div className="relative aspect-[4/3] bg-muted/30 overflow-hidden">
                   {prod.image_url ? (
-                    <img 
-                      src={prod.image_url} 
-                      alt={prod.name_en} 
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
-                      loading="lazy" 
-                    />
+                    <img src={prod.image_url} alt={prod.name_en} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <ImageIcon className="h-12 w-12 text-muted-foreground/20" />
                     </div>
                   )}
 
-                  {/* Top-left: Checkbox */}
+                  {/* Checkbox */}
                   <div className="absolute top-3 left-3 z-10" onClick={e => e.stopPropagation()}>
                     <Checkbox
                       checked={isSelected}
@@ -734,22 +446,20 @@ const AdminProducts = () => {
                     />
                   </div>
 
-                  {/* Top-right: Status */}
-                  <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
-                    <Badge 
-                      variant={prod.is_active ? 'default' : 'secondary'} 
+                  {/* Status */}
+                  <div className="absolute top-3 right-3 z-10" onClick={e => e.stopPropagation()}>
+                    <Badge
+                      variant={prod.is_active ? 'default' : 'secondary'}
                       className={cn(
                         "text-[11px] px-2 py-0.5 font-medium shadow-sm",
-                        prod.is_active 
-                          ? "bg-emerald-500/90 text-white hover:bg-emerald-500" 
-                          : "bg-muted text-muted-foreground"
+                        prod.is_active ? "bg-emerald-500/90 text-white hover:bg-emerald-500" : "bg-muted text-muted-foreground"
                       )}
                     >
                       {prod.is_active ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
 
-                  {/* Bottom-left: Price */}
+                  {/* Price */}
                   {price > 0 && (
                     <div className="absolute bottom-3 left-3">
                       <span className="bg-background/90 backdrop-blur-sm text-foreground text-sm font-bold px-3 py-1 rounded-full shadow-sm">
@@ -759,7 +469,7 @@ const AdminProducts = () => {
                   )}
                 </div>
 
-                {/* Content Area */}
+                {/* Content */}
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0 flex-1">
@@ -768,22 +478,22 @@ const AdminProducts = () => {
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground" onClick={e => e.stopPropagation()}>
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem onClick={() => openEdit(prod)}>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/admin/products/edit/${prod.id}`); }}>
                           <Pencil className="h-4 w-4 mr-2" /> Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => toggleStatusMutation.mutate({ id: prod.id, is_active: !prod.is_active })}>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toggleStatusMutation.mutate({ id: prod.id, is_active: !prod.is_active }); }}>
                           {prod.is_active ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
                           {prod.is_active ? 'Deactivate' : 'Activate'}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
-                          onClick={() => { setDeleteId(prod.id); setDeleteName(prod.name_en); }}
+                          onClick={(e) => { e.stopPropagation(); setDeleteId(prod.id); setDeleteName(prod.name_en); }}
                         >
                           <Trash2 className="h-4 w-4 mr-2" /> Delete
                         </DropdownMenuItem>
@@ -792,33 +502,20 @@ const AdminProducts = () => {
                   </div>
 
                   {productCode && (
-                    <p className="text-[11px] font-mono text-muted-foreground/70 mb-3 truncate">
-                      {productCode}
-                    </p>
+                    <p className="text-[11px] font-mono text-muted-foreground/70 mb-3 truncate">{productCode}</p>
                   )}
 
                   <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1 h-8 text-xs gap-1.5"
-                      onClick={() => openEdit(prod)}
-                    >
+                    <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1.5"
+                      onClick={() => navigate(`/admin/products/edit/${prod.id}`)}>
                       <Pencil className="h-3 w-3" /> Edit
                     </Button>
                     <div className="flex items-center gap-1.5 px-2">
-                      <Switch 
-                        checked={prod.is_active}
-                        onCheckedChange={v => toggleStatusMutation.mutate({ id: prod.id, is_active: v })}
-                        className="scale-90"
-                      />
+                      <Switch checked={prod.is_active} onCheckedChange={v => toggleStatusMutation.mutate({ id: prod.id, is_active: v })} className="scale-90" />
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
+                    <Button variant="ghost" size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => { setDeleteId(prod.id); setDeleteName(prod.name_en); }}
-                    >
+                      onClick={() => { setDeleteId(prod.id); setDeleteName(prod.name_en); }}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -841,23 +538,12 @@ const AdminProducts = () => {
             </Button>
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
               let pageNum: number;
-              if (totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (page <= 3) {
-                pageNum = i + 1;
-              } else if (page >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
-              } else {
-                pageNum = page - 2 + i;
-              }
+              if (totalPages <= 5) pageNum = i + 1;
+              else if (page <= 3) pageNum = i + 1;
+              else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
+              else pageNum = page - 2 + i;
               return (
-                <Button
-                  key={pageNum}
-                  variant={page === pageNum ? "default" : "outline"}
-                  size="sm"
-                  className="w-8 h-8 p-0"
-                  onClick={() => setPage(pageNum)}
-                >
+                <Button key={pageNum} variant={page === pageNum ? "default" : "outline"} size="sm" className="w-8 h-8 p-0" onClick={() => setPage(pageNum)}>
                   {pageNum}
                 </Button>
               );
@@ -875,7 +561,7 @@ const AdminProducts = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Product?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete <strong>{deleteName}</strong> and all its images and variants. This action cannot be undone.
+              This will permanently delete <strong>{deleteName}</strong> and all its images and variants.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -892,7 +578,7 @@ const AdminProducts = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {selected.size} Products?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete {selected.size} products along with their images and variants. This action cannot be undone.
+              This will permanently delete {selected.size} products along with their images and variants.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
