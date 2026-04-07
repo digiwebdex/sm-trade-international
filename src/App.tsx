@@ -50,6 +50,7 @@ const AdminQuoteRequests = lazy(() => import("./pages/admin/AdminQuoteRequests")
 const AdminFooter = lazy(() => import("./pages/admin/AdminFooter"));
 const AdminContactInfo = lazy(() => import("./pages/admin/AdminContactInfo"));
 const AdminMenuManager = lazy(() => import("./pages/admin/AdminMenuManager"));
+const AdminProductEditor = lazy(() => import("./pages/admin/AdminProductEditor"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
