@@ -501,7 +501,7 @@ const Catalog = () => {
                 </span>
               </a>
             </Button>
-            <Button asChild variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 px-10 py-6 rounded-lg text-base">
+            <Button asChild variant="outline" size="lg" className="border-primary-foreground/30 bg-primary-foreground text-primary hover:bg-primary-foreground/90 px-10 py-6 rounded-lg text-base">
               <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">
                 <MessageCircle className="h-4 w-4 mr-2" />
                 <span className="font-semibold" style={{ fontFamily: 'DM Sans, sans-serif' }}>
