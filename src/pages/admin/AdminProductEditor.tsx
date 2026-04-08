@@ -313,13 +313,30 @@ const AdminProductEditor = () => {
 
                   <div>
                     <label className="text-sm font-medium mb-1.5 block">Product Code / Slug</label>
-                    <Input
-                      value={form.product_code}
-                      onChange={e => setForm(f => ({ ...f, product_code: e.target.value }))}
-                      placeholder="auto-generated from name"
-                      className="font-mono text-sm"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">Used in URLs and for identification. Auto-generated if left blank.</p>
+                    <div className="flex gap-2">
+                      <Input
+                        value={form.product_code}
+                        onChange={e => setForm(f => ({ ...f, product_code: e.target.value }))}
+                        placeholder="auto-generated from name"
+                        className="font-mono text-sm"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0 whitespace-nowrap"
+                        onClick={() => {
+                          const catPrefix = categories.find(c => c.id === form.category_id)?.name_en
+                            ?.substring(0, 3).toUpperCase() || 'PRD';
+                          const unique = `${catPrefix}-${Date.now().toString(36).toUpperCase().slice(-5)}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+                          setForm(f => ({ ...f, product_code: unique }));
+                        }}
+                      >
+                        <Tag className="h-3.5 w-3.5 mr-1" />
+                        Generate
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Used in URLs and for identification. Click Generate for a unique code.</p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
