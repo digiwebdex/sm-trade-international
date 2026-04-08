@@ -350,7 +350,7 @@ const AdminProductEditor = () => {
                         Generate
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">Used in URLs and for identification. Click Generate for a unique code.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Auto-generated unique code. Click Generate to create a new one.</p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
