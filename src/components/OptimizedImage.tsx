@@ -62,6 +62,15 @@ const OptimizedImage = ({
   const [loaded, setLoaded] = useState(false);
   const [inView, setInView] = useState(priority);
   const imgRef = useRef<HTMLDivElement>(null);
+  const imgElRef = useRef<HTMLImageElement>(null);
+
+  // Handle cached images where onLoad may not fire
+  useEffect(() => {
+    const img = imgElRef.current;
+    if (img && img.complete && img.naturalWidth > 0) {
+      setLoaded(true);
+    }
+  });
 
   // Intersection Observer for true lazy loading with early trigger
   useEffect(() => {
@@ -111,12 +120,14 @@ const OptimizedImage = ({
             <source srcSet={srcSet} sizes={sizes} />
           )}
           <img
+            ref={imgElRef}
             src={src}
             alt={alt}
             loading={priority ? 'eager' : 'lazy'}
             decoding={priority ? 'sync' : 'async'}
             fetchPriority={priority ? 'high' : undefined}
             onLoad={() => setLoaded(true)}
+            onError={() => setLoaded(true)}
             className={cn(
               'transition-[transform,filter] duration-500 will-change-[transform,filter]',
               blurPlaceholder && !loaded && 'scale-105 blur-sm',
