@@ -1,9 +1,10 @@
 /**
  * Frontend API Client — Drop-in replacement for Supabase client
  * 
- * Supports Supabase-style chaining:
- *   supabase.from('products').select('*').eq('is_active', true).order('sort_order')
+ * Routes database queries through the real Supabase client,
+ * while keeping custom VPS auth & storage adapters.
  */
+import { supabase as realSupabase } from '@/integrations/supabase/client';
 
 const PREVIEW_HOST_MARKERS = ['lovableproject.com', 'id-preview--', 'lovable.app'];
 const DEFAULT_PUBLIC_ORIGIN = 'https://smtradeint.com';
@@ -17,42 +18,6 @@ export const PUBLIC_ORIGIN = import.meta.env.VITE_PUBLIC_SITE_ORIGIN
 export const API_BASE = import.meta.env.VITE_API_BASE_URL
   || (isPreviewHost ? `${DEFAULT_PUBLIC_ORIGIN}/api` : '/api');
 
-const TABLE_ASSET_FIELDS: Record<string, string[]> = {
-  about_page: ['image_url'],
-  client_logos: ['logo_url'],
-  gallery: ['image_url'],
-  hero_slides: ['image_url'],
-  product_images: ['image_url'],
-  product_variant_images: ['image_url'],
-  product_variants: ['image_url'],
-  products: ['image_url'],
-  seo_meta: ['og_image_url'],
-};
-
-function normalizeAssetUrl(value: unknown): unknown {
-  if (typeof value !== 'string' || !value.trim()) return value;
-  if (/^(https?:|data:|blob:|mailto:|tel:)/i.test(value)) return value;
-
-  const trimmed = value.trim();
-  if (trimmed.startsWith('/uploads/')) return `${PUBLIC_ORIGIN}${trimmed}`;
-  if (trimmed.startsWith('uploads/')) return `${PUBLIC_ORIGIN}/${trimmed}`;
-  if (trimmed.startsWith('/')) return `${PUBLIC_ORIGIN}${trimmed}`;
-
-  return trimmed;
-}
-
-function normalizeRowAssets(table: string, row: any) {
-  if (!row || typeof row !== 'object' || Array.isArray(row)) return row;
-
-  const assetFields = TABLE_ASSET_FIELDS[table];
-  if (!assetFields?.length) return row;
-
-  return assetFields.reduce((acc, field) => {
-    if (field in acc) acc[field] = normalizeAssetUrl(acc[field]);
-    return acc;
-  }, { ...row });
-}
-
 // ── Token management ────────────────────────────────────────
 let authToken: string | null = localStorage.getItem('auth_token');
 let currentUser: { id: string; email: string } | null = null;
@@ -64,25 +29,24 @@ function getHeaders(): Record<string, string> {
   return h;
 }
 
-// ── Table name mapping (kebab-case for URLs) ────────────────
-const TABLE_URL_MAP: Record<string, string> = {
-  about_page: 'about-page',
-  client_logos: 'client-logos',
-  contact_messages: 'contact-messages',
-  hero_slides: 'hero-slides',
-  product_images: 'product-images',
-  product_variants: 'product-variants',
-  product_variant_images: 'product-variant-images',
-  quote_requests: 'quote-requests',
-  seo_meta: 'seo-meta',
-  site_settings: 'site-settings',
-};
-
-function tableUrl(table: string): string {
-  return `${API_BASE}/${TABLE_URL_MAP[table] || table}`;
+// ── Storage adapter ─────────────────────────────────────────
+function createStorageBucket(bucket: string) {
+  return {
+    async upload(filePath: string, file: File | Blob) {
+      // Use real Supabase storage
+      const { data, error } = await realSupabase.storage.from(bucket).upload(filePath, file, { upsert: true });
+      if (error) return { data: null, error: { message: error.message } };
+      const { data: urlData } = realSupabase.storage.from(bucket).getPublicUrl(data.path);
+      return { data: { path: data.path, publicUrl: urlData.publicUrl }, error: null };
+    },
+    getPublicUrl(filePath: string) {
+      const { data } = realSupabase.storage.from(bucket).getPublicUrl(filePath);
+      return { data: { publicUrl: data.publicUrl } };
+    },
+  };
 }
 
-// ── Query Builder (mimics Supabase .from().select/insert/etc) ─
+// ── Query Builder using real Supabase client ────────────────
 class QueryBuilder {
   private table: string;
   private _filters: Array<{ column: string; op: string; value: any }> = [];
@@ -96,6 +60,7 @@ class QueryBuilder {
   private _notFilters: Array<{ column: string; op: string; value: any }> = [];
   private _inFilters: Array<{ column: string; values: any[] }> = [];
   private _maybeSingle = false;
+  private _returnSelect?: string; // for .insert().select() chain
 
   constructor(table: string) {
     this.table = table;
@@ -151,6 +116,11 @@ class QueryBuilder {
   }
 
   select(columns?: string): this {
+    // If a write method was already set, this is a "return data" request
+    if (this._method === 'insert' || this._method === 'update' || this._method === 'upsert') {
+      this._returnSelect = columns || '*';
+      return this;
+    }
     this._method = 'select';
     this._selectCols = columns;
     return this;
@@ -179,7 +149,6 @@ class QueryBuilder {
     return this;
   }
 
-  // Make the builder thenable — this is what allows `await supabase.from(...).select(...).eq(...)`
   then(
     resolve?: ((value: { data: any; error: any }) => any) | null,
     reject?: ((reason: any) => any) | null
@@ -201,7 +170,6 @@ class QueryBuilder {
         case 'upsert':
           return await this._doUpsert();
         default:
-          // Default to select if no method specified
           return await this._doSelect();
       }
     } catch (err: any) {
@@ -209,244 +177,117 @@ class QueryBuilder {
     }
   }
 
+  private _applyFilters(query: any): any {
+    let q = query;
+    for (const f of this._filters) {
+      if (f.op === 'eq') q = q.eq(f.column, f.value);
+      if (f.op === 'neq') q = q.neq(f.column, f.value);
+      if (f.op === 'is_null') q = q.is(f.column, null);
+    }
+    for (const f of this._notFilters) {
+      if (f.op === 'is' && f.value === null) q = q.not(f.column, 'is', null);
+    }
+    for (const f of this._inFilters) {
+      q = q.in(f.column, f.values);
+    }
+    return q;
+  }
+
   private async _doSelect(): Promise<{ data: any; error: any }> {
-    const params = new URLSearchParams();
-    if (this._selectCols) params.set('select', this._selectCols);
-
-    const url = `${tableUrl(this.table)}?${params}`;
-    const resp = await fetch(url, { headers: getHeaders() });
-    if (!resp.ok) throw new Error(await resp.text());
-    let data = await resp.json();
-
-    if (Array.isArray(data)) {
-      data = data.map(row => normalizeRowAssets(this.table, row));
-    } else if (data && typeof data === 'object') {
-      data = normalizeRowAssets(this.table, data);
-    }
-
-    // Client-side filtering
-    if (this._filters.length > 0) {
-      data = data.filter((row: any) =>
-        this._filters.every(f => {
-          if (f.op === 'eq') return row[f.column] === f.value || String(row[f.column]) === String(f.value);
-          if (f.op === 'neq') return row[f.column] !== f.value;
-          if (f.op === 'is_null') return row[f.column] === null || row[f.column] === undefined;
-          return true;
-        })
-      );
-    }
-
-    // Not filters
-    if (this._notFilters.length > 0) {
-      data = data.filter((row: any) =>
-        this._notFilters.every(f => {
-          if (f.op === 'is' && f.value === null) return row[f.column] !== null;
-          return true;
-        })
-      );
-    }
-
-    // In filters
-    if (this._inFilters.length > 0) {
-      data = data.filter((row: any) =>
-        this._inFilters.every(f => f.values.includes(row[f.column]))
-      );
-    }
-
-    // Client-side ordering
+    let query = realSupabase.from(this.table as any).select(this._selectCols || '*');
+    query = this._applyFilters(query);
     if (this._orderCol) {
-      const col = this._orderCol;
-      const asc = this._orderAsc;
-      data.sort((a: any, b: any) => {
-        if (a[col] < b[col]) return asc ? -1 : 1;
-        if (a[col] > b[col]) return asc ? 1 : -1;
-        return 0;
-      });
+      query = query.order(this._orderCol, { ascending: this._orderAsc });
     }
-
-    if (this._limitVal) data = data.slice(0, this._limitVal);
-    if (this._single) return { data: data[0] || null, error: null };
-    return { data, error: null };
+    if (this._limitVal) {
+      query = query.limit(this._limitVal);
+    }
+    if (this._maybeSingle) {
+      return await query.maybeSingle();
+    }
+    if (this._single) {
+      return await query.single();
+    }
+    return await query;
   }
 
   private async _doInsert(): Promise<{ data: any; error: any }> {
-    let url = tableUrl(this.table);
-    const isPublicTable = ['contact_messages', 'quote_requests'].includes(this.table);
-    if (isPublicTable && !authToken) {
-      url = `${tableUrl(this.table)}/public`;
+    let query = realSupabase.from(this.table as any).insert(this._payload as any);
+    if (this._returnSelect) {
+      query = (query as any).select(this._returnSelect);
     }
-
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(this._payload),
-    });
-    if (!resp.ok) throw new Error(await resp.text());
-    const data = await resp.json();
-    return { data, error: null };
+    if (this._single) {
+      return await (query as any).single();
+    }
+    return await query;
   }
 
   private async _doUpdate(): Promise<{ data: any; error: any }> {
-    const idFilter = this._filters.find(f => f.column === 'id');
-    const keyFilter = this._filters.find(f => f.column === 'setting_key');
-    
-    if (idFilter) {
-      const resp = await fetch(`${tableUrl(this.table)}/${idFilter.value}`, {
-        method: 'PATCH',
-        headers: getHeaders(),
-        body: JSON.stringify(this._payload),
-      });
-      if (!resp.ok) throw new Error(await resp.text());
-      const data = await resp.json();
-      return { data, error: null };
+    let query = realSupabase.from(this.table as any).update(this._payload as any);
+    query = this._applyFilters(query);
+    if (this._returnSelect) {
+      query = (query as any).select(this._returnSelect);
     }
-    
-    // For site_settings updates by setting_key, use the POST (upsert) endpoint
-    if (keyFilter && this.table === 'site_settings') {
-      const resp = await fetch(tableUrl(this.table), {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ setting_key: keyFilter.value, ...this._payload }),
-      });
-      if (!resp.ok) throw new Error(await resp.text());
-      const data = await resp.json();
-      return { data, error: null };
+    if (this._single) {
+      return await (query as any).single();
     }
-
-    // Generic fallback: if there's any filter, fetch matching rows to get their ID, then update by ID
-    if (this._filters.length > 0) {
-      const selectBuilder = new QueryBuilder(this.table);
-      selectBuilder.select('*');
-      this._filters.forEach(f => {
-        if (f.op === 'eq') selectBuilder.eq(f.column, f.value);
-      });
-      const { data: rows } = await selectBuilder;
-      if (rows && rows.length > 0 && rows[0].id) {
-        const resp = await fetch(`${tableUrl(this.table)}/${rows[0].id}`, {
-          method: 'PATCH',
-          headers: getHeaders(),
-          body: JSON.stringify(this._payload),
-        });
-        if (!resp.ok) throw new Error(await resp.text());
-        const data = await resp.json();
-        return { data, error: null };
-      }
-      return { data: null, error: null };
-    }
-
-    throw new Error('update() requires at least one filter (e.g. .eq("id", value))');
+    return await query;
   }
 
   private async _doDelete(): Promise<{ data: any; error: any }> {
-    const idFilter = this._filters.find(f => f.column === 'id');
-    if (idFilter) {
-      const resp = await fetch(`${tableUrl(this.table)}/${idFilter.value}`, {
-        method: 'DELETE',
-        headers: getHeaders(),
-      });
-      if (!resp.ok) throw new Error(await resp.text());
-      return { data: null, error: null };
-    }
-    // Support delete by product_id (for variants/images cleanup)
-    const prodFilter = this._filters.find(f => f.column === 'product_id');
-    if (prodFilter) {
-      const resp = await fetch(`${tableUrl(this.table)}/by-product/${prodFilter.value}`, {
-        method: 'DELETE',
-        headers: getHeaders(),
-      });
-      if (!resp.ok) throw new Error(await resp.text());
-      return { data: null, error: null };
-    }
-    // Support delete by .in('product_id', [...])
-    const inFilter = this._inFilters.find(f => f.column === 'product_id');
-    if (inFilter) {
-      // Delete one by one
-      for (const pid of inFilter.values) {
-        await fetch(`${tableUrl(this.table)}/by-product/${pid}`, {
-          method: 'DELETE',
-          headers: getHeaders(),
-        });
-      }
-      return { data: null, error: null };
-    }
-    // Support delete by .in('id', [...])
-    const inIdFilter = this._inFilters.find(f => f.column === 'id');
-    if (inIdFilter) {
-      for (const id of inIdFilter.values) {
-        await fetch(`${tableUrl(this.table)}/${id}`, {
-          method: 'DELETE',
-          headers: getHeaders(),
-        });
-      }
-      return { data: null, error: null };
-    }
-    throw new Error('delete() requires .eq("id", value) or .eq("product_id", value)');
+    let query = realSupabase.from(this.table as any).delete();
+    query = this._applyFilters(query);
+    return await query;
   }
 
   private async _doUpsert(): Promise<{ data: any; error: any }> {
-    if (this.table === 'site_settings') {
-      return this._doInsert();
+    let query = realSupabase.from(this.table as any).upsert(this._payload as any);
+    if (this._returnSelect) {
+      query = (query as any).select(this._returnSelect);
     }
-    const idFilter = this._filters.find(f => f.column === 'id');
-    if (idFilter) {
-      this._method = 'update';
-      return this._doUpdate();
+    if (this._single) {
+      return await (query as any).single();
     }
-    return this._doInsert();
+    return await query;
   }
-}
-
-// ── Storage adapter ─────────────────────────────────────────
-function createStorageBucket(bucket: string) {
-  return {
-    async upload(filePath: string, file: File | Blob) {
-      const formData = new FormData();
-      formData.append('file', file);
-      const resp = await fetch(`${API_BASE}/upload/${bucket}?path=${encodeURIComponent(filePath)}`, {
-        method: 'POST',
-        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-        body: formData,
-      });
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: 'Upload failed' }));
-        return { data: null, error: { message: err.error || 'Upload failed' } };
-      }
-      const data = await resp.json();
-      // Return publicUrl so callers can use it directly
-      return { data: { path: data.path, publicUrl: data.publicUrl }, error: null };
-    },
-    getPublicUrl(filePath: string) {
-        return { data: { publicUrl: `${PUBLIC_ORIGIN}/uploads/${bucket}/${filePath}` } };
-    },
-  };
 }
 
 // ── Auth adapter ────────────────────────────────────────────
 const auth = {
   async signInWithPassword({ email, password }: { email: string; password: string }) {
-    try {
-      const resp = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      if (!resp.ok) {
-        const err = await resp.json();
-        return { data: null, error: { message: err.error } };
+    // Try real Supabase auth first
+    const { data, error } = await realSupabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      // Fallback to VPS auth
+      try {
+        const resp = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json();
+          return { data: null, error: { message: err.error || error.message } };
+        }
+        const vpsData = await resp.json();
+        authToken = vpsData.token;
+        currentUser = vpsData.user;
+        localStorage.setItem('auth_token', vpsData.token);
+        localStorage.setItem('auth_user', JSON.stringify(vpsData.user));
+        authListeners.forEach(fn => fn(currentUser));
+        return { data: { user: vpsData.user, session: { access_token: vpsData.token } }, error: null };
+      } catch (fallbackErr: any) {
+        return { data: null, error: { message: error.message } };
       }
-      const data = await resp.json();
-      authToken = data.token;
-      currentUser = data.user;
-      localStorage.setItem('auth_token', data.token);
-      localStorage.setItem('auth_user', JSON.stringify(data.user));
-      authListeners.forEach(fn => fn(currentUser));
-      return { data: { user: data.user, session: { access_token: data.token } }, error: null };
-    } catch (err: any) {
-      return { data: null, error: { message: err.message } };
     }
+    // Real Supabase auth succeeded
+    currentUser = data.user ? { id: data.user.id, email: data.user.email || '' } : null;
+    authListeners.forEach(fn => fn(currentUser));
+    return { data, error: null };
   },
 
   async signOut() {
+    await realSupabase.auth.signOut();
     authToken = null;
     currentUser = null;
     localStorage.removeItem('auth_token');
@@ -455,6 +296,12 @@ const auth = {
   },
 
   async getSession() {
+    const { data, error } = await realSupabase.auth.getSession();
+    if (data?.session) {
+      currentUser = data.session.user ? { id: data.session.user.id, email: data.session.user.email || '' } : null;
+      return { data, error };
+    }
+    // Fallback to VPS token
     const token = localStorage.getItem('auth_token');
     const user = localStorage.getItem('auth_user');
     if (token && user) {
@@ -472,18 +319,28 @@ const auth = {
   },
 
   onAuthStateChange(callback: (event: string, session: any) => void) {
-    const listener = (user: typeof currentUser) => {
-      callback(user ? 'SIGNED_IN' : 'SIGNED_OUT', user ? { user, access_token: authToken } : null);
-    };
-    authListeners.add(listener);
-    const user = localStorage.getItem('auth_user');
-    if (user) listener(JSON.parse(user));
-    else listener(null);
+    // Use real Supabase auth state
+    const { data } = realSupabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        currentUser = session.user ? { id: session.user.id, email: session.user.email || '' } : null;
+      } else {
+        currentUser = null;
+      }
+      callback(event, session);
+    });
+
+    // Also check VPS auth fallback
+    const vpsUser = localStorage.getItem('auth_user');
+    if (vpsUser) {
+      const parsed = JSON.parse(vpsUser);
+      currentUser = parsed;
+      callback('SIGNED_IN', { user: parsed, access_token: localStorage.getItem('auth_token') });
+    }
 
     return {
       data: {
         subscription: {
-          unsubscribe: () => { authListeners.delete(listener); },
+          unsubscribe: () => { data.subscription.unsubscribe(); },
         },
       },
     };
@@ -495,10 +352,8 @@ export const api = {
   from: (table: string) => new QueryBuilder(table),
   storage: { from: (bucket: string) => createStorageBucket(bucket) },
   auth,
-  channel: (_name: string) => ({
-    on: () => ({ subscribe: () => ({}) }),
-  }),
-  removeChannel: () => {},
+  channel: (name: string) => realSupabase.channel(name),
+  removeChannel: (channel: any) => realSupabase.removeChannel(channel),
 };
 
 // For backward compatibility — alias
