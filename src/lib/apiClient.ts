@@ -5,6 +5,9 @@
 
 const PREVIEW_HOST_MARKERS = ['lovableproject.com', 'id-preview--', 'lovable.app'];
 const DEFAULT_PUBLIC_ORIGIN = 'https://smtradeint.com';
+const UPLOAD_ROUTE_PREFIX = '/uploads';
+const KNOWN_UPLOAD_BUCKETS = ['cms-images', 'products', 'quote-attachments'] as const;
+const CMS_UPLOAD_FOLDERS = ['products', 'gallery', 'hero-slides', 'clients', 'seo', 'product-views', 'variant-images', 'variants'] as const;
 const isBrowser = typeof window !== 'undefined';
 const hostname = isBrowser ? window.location.hostname : '';
 const isPreviewHost = PREVIEW_HOST_MARKERS.some(marker => hostname.includes(marker));
@@ -14,6 +17,26 @@ export const PUBLIC_ORIGIN = import.meta.env.VITE_PUBLIC_SITE_ORIGIN
 
 export const API_BASE = import.meta.env.VITE_API_BASE_URL
   || (isPreviewHost ? `${DEFAULT_PUBLIC_ORIGIN}/api` : '/api');
+
+function joinPublicOrigin(pathname: string): string {
+  return `${PUBLIC_ORIGIN}${pathname.startsWith('/') ? pathname : `/${pathname}`}`;
+}
+
+function toUploadPath(pathname: string): string | null {
+  const cleanPath = String(pathname || '').replace(/^\/+/, '');
+  if (!cleanPath) return null;
+  if (cleanPath.startsWith('uploads/')) return `/${cleanPath}`;
+
+  if (KNOWN_UPLOAD_BUCKETS.some(bucket => cleanPath === bucket || cleanPath.startsWith(`${bucket}/`))) {
+    return `${UPLOAD_ROUTE_PREFIX}/${cleanPath}`;
+  }
+
+  if (CMS_UPLOAD_FOLDERS.some(folder => cleanPath === folder || cleanPath.startsWith(`${folder}/`))) {
+    return `${UPLOAD_ROUTE_PREFIX}/cms-images/${cleanPath}`;
+  }
+
+  return null;
+}
 
 // ── Table name → VPS route name mapping ─────────────────────
 const TABLE_ROUTE_MAP: Record<string, string> = {
@@ -47,12 +70,26 @@ function getHeaders(): Record<string, string> {
 // ── Asset URL normalization ─────────────────────────────────
 function normalizeAssetUrl(val: string): string {
   if (!val || typeof val !== 'string') return val;
-  if (val.startsWith('http://') || val.startsWith('https://') || val.startsWith('data:')) return val;
+  if (val.startsWith('data:') || val.startsWith('blob:')) return val;
+
+  if (val.startsWith('http://') || val.startsWith('https://')) {
+    try {
+      const url = new URL(val);
+      const uploadPath = toUploadPath(url.pathname);
+      return uploadPath ? joinPublicOrigin(`${uploadPath}${url.search}`) : val;
+    } catch {
+      return val;
+    }
+  }
+
+  const uploadPath = toUploadPath(val);
+  if (uploadPath) return joinPublicOrigin(uploadPath);
+
   const cleanPath = val.startsWith('/') ? val : `/${val}`;
-  return `${PUBLIC_ORIGIN}${cleanPath}`;
+  return joinPublicOrigin(cleanPath);
 }
 
-const IMAGE_FIELDS = ['image_url', 'logo_url', 'og_image_url', 'cta_link'];
+const IMAGE_FIELDS = ['image_url', 'logo_url', 'og_image_url'];
 
 function normalizeRowAssets(row: any): any {
   if (!row || typeof row !== 'object') return row;
@@ -69,12 +106,12 @@ function normalizeRowAssets(row: any): any {
 function createStorageBucket(bucket: string) {
   return {
     async upload(filePath: string, file: File | Blob) {
+      const cleanFilePath = String(filePath || '').replace(/^\/+/, '');
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('bucket', bucket);
-      formData.append('path', filePath);
       try {
-        const resp = await fetch(`${API_BASE}/upload`, {
+        const uploadUrl = `${API_BASE}/upload/${encodeURIComponent(bucket)}${cleanFilePath ? `?path=${encodeURIComponent(cleanFilePath)}` : ''}`;
+        const resp = await fetch(uploadUrl, {
           method: 'POST',
           headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
           body: formData,
@@ -84,14 +121,17 @@ function createStorageBucket(bucket: string) {
           return { data: null, error: { message: err.error || 'Upload failed' } };
         }
         const result = await resp.json();
-        const publicUrl = normalizeAssetUrl(result.url || result.path || '');
-        return { data: { path: result.path || filePath, publicUrl }, error: null };
+        const storedPath = result.path || (cleanFilePath ? `${bucket}/${cleanFilePath}` : bucket);
+        const publicUrl = normalizeAssetUrl(result.publicUrl || storedPath || '');
+        return { data: { path: storedPath, publicUrl }, error: null };
       } catch (err: any) {
         return { data: null, error: { message: err.message } };
       }
     },
     getPublicUrl(filePath: string) {
-      return { data: { publicUrl: normalizeAssetUrl(filePath) } };
+      const cleanFilePath = String(filePath || '').replace(/^\/+/, '');
+      const storedPath = cleanFilePath.startsWith(`${bucket}/`) ? cleanFilePath : `${bucket}/${cleanFilePath}`;
+      return { data: { publicUrl: normalizeAssetUrl(storedPath) } };
     },
   };
 }
