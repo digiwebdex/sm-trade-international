@@ -7,6 +7,8 @@ interface LanguageContextType {
   toggleLang: () => void;
   setLang: (l: Lang) => void;
   t: (key: string) => string;
+  /** Trilingual inline helper: tt('Hello','হ্যালো','你好') — picks by current lang with EN fallback. */
+  tt: (en: string, bn: string, zh: string) => string;
 }
 
 const translations: Record<string, Partial<Record<Lang, string>>> = {
@@ -106,8 +108,13 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const toggleLang = () => setLangState(l => l === 'en' ? 'bn' : l === 'bn' ? 'zh' : 'en');
   const setLang = (l: Lang) => setLangState(l);
   const t = (key: string) => translations[key]?.[lang] ?? translations[key]?.['en'] ?? key;
+  const tt = (en: string, bn: string, zh: string) => {
+    if (lang === 'zh') return zh || en;
+    if (lang === 'bn') return bn || en;
+    return en;
+  };
   return (
-    <LanguageContext.Provider value={{ lang, toggleLang, setLang, t }}>
+    <LanguageContext.Provider value={{ lang, toggleLang, setLang, t, tt }}>
       {children}
     </LanguageContext.Provider>
   );
