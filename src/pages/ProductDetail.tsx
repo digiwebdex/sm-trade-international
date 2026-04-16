@@ -152,13 +152,16 @@ const ProductDetail = () => {
       category: product.category_id || '',
       quantity,
     });
-    toast.success(lang === 'en' ? 'Added to quote basket' : 'কোটেশন বাস্কেটে যোগ হয়েছে');
+    toast.success(lang === 'zh' ? '已加入询价篮' : lang === 'en' ? 'Added to quote basket' : 'কোটেশন বাস্কেটে যোগ হয়েছে');
   };
 
   const handleWhatsApp = () => {
     if (!product) return;
+    const productName = pickLocalized(product as any, 'name', lang);
     const msg = encodeURIComponent(
-      `Hi, I'm interested in: ${product.name_en}, Qty: ${quantity}. Please share price & availability.`
+      lang === 'zh'
+        ? `您好，我对这个产品感兴趣：${productName}，数量：${quantity}。请提供价格和供货情况。`
+        : `Hi, I'm interested in: ${productName}, Qty: ${quantity}. Please share price & availability.`
     );
     window.open(`https://wa.me/8801867666888?text=${msg}`, '_blank');
   };
@@ -166,10 +169,10 @@ const ProductDetail = () => {
   const handleShare = async () => {
     const url = window.location.href;
     if (navigator.share) {
-      await navigator.share({ title: product?.name_en ?? '', url });
+      await navigator.share({ title: pickLocalized(product as any, 'name', lang) ?? '', url });
     } else {
       await navigator.clipboard.writeText(url);
-      toast.success(lang === 'en' ? 'Link copied!' : 'লিংক কপি হয়েছে!');
+      toast.success(lang === 'zh' ? '链接已复制！' : lang === 'en' ? 'Link copied!' : 'লিংক কপি হয়েছে!');
     }
   };
 
@@ -219,13 +222,13 @@ const ProductDetail = () => {
           <button onClick={() => navigate(-1)}
             className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-3.5 w-3.5" />
-            {lang === 'en' ? 'Back' : 'ফিরুন'}
+            {lang === 'zh' ? '返回' : lang === 'en' ? 'Back' : 'ফিরুন'}
           </button>
           <span className="text-border">|</span>
           <nav className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
-            <Link to="/" className="hover:text-accent hover:underline transition-colors">{lang === 'en' ? 'Home' : 'হোম'}</Link>
+            <Link to="/" className="hover:text-accent hover:underline transition-colors">{lang === 'zh' ? '首页' : lang === 'en' ? 'Home' : 'হোম'}</Link>
             <ChevronRight className="h-3 w-3" />
-            <Link to="/products" className="hover:text-accent hover:underline transition-colors">{lang === 'en' ? 'Products' : 'পণ্য'}</Link>
+            <Link to="/products" className="hover:text-accent hover:underline transition-colors">{lang === 'zh' ? '产品' : lang === 'en' ? 'Products' : 'পণ্য'}</Link>
             {categoryLabel && (
               <>
                 <ChevronRight className="h-3 w-3" />
@@ -258,7 +261,7 @@ const ProductDetail = () => {
             {categoryLabel && (
               <Link to={`/catalog?category=${product.category_id}`}
                 className="text-sm text-accent hover:text-accent/80 hover:underline w-fit">
-                {lang === 'en' ? `Visit the ${categoryLabel} Store` : `${categoryLabel} স্টোর দেখুন`}
+                {lang === 'zh' ? `查看 ${categoryLabel}` : lang === 'en' ? `Visit the ${categoryLabel} Store` : `${categoryLabel} স্টোর দেখুন`}
               </Link>
             )}
 
@@ -275,11 +278,11 @@ const ProductDetail = () => {
             {variants.length > 0 && (
               <div className="space-y-2">
                 <div className="text-sm font-medium text-foreground">
-                  {lang === 'en' ? 'Color' : 'রঙ'}:{' '}
+                  {lang === 'zh' ? '颜色' : lang === 'en' ? 'Color' : 'রঙ'}:{' '}
                   <span className="font-bold">
                     {selectedVariant
-                      ? (selectedVariant.color_name || selectedVariant.variant_label_en)
-                      : (lang === 'en' ? 'Select a color' : 'একটি রঙ নির্বাচন করুন')}
+                      ? (selectedVariant.color_name || pickLocalized(selectedVariant as any, 'variant_label', lang))
+                      : (lang === 'zh' ? '请选择颜色' : lang === 'en' ? 'Select a color' : 'একটি রঙ নির্বাচন করুন')}
                   </span>
                 </div>
                 <div className="flex gap-2 flex-wrap">
@@ -318,16 +321,15 @@ const ProductDetail = () => {
             {/* Product Code */}
             {(product as any).product_code && (
               <div className="text-xs text-muted-foreground">
-                {lang === 'en' ? 'Product Code' : 'পণ্য কোড'}: <span className="font-mono font-semibold text-foreground">{(product as any).product_code}</span>
+                {lang === 'zh' ? '产品编号' : lang === 'en' ? 'Product Code' : 'পণ্য কোড'}: <span className="font-mono font-semibold text-foreground">{(product as any).product_code}</span>
               </div>
             )}
 
             <div className="h-px bg-border/50" />
 
-            {/* Description */}
             {desc && (
               <div className="space-y-2">
-                <h3 className="text-sm font-bold text-foreground">{lang === 'en' ? 'About this item' : 'এই পণ্য সম্পর্কে'}</h3>
+                <h3 className="text-sm font-bold text-foreground">{lang === 'zh' ? '产品介绍' : lang === 'en' ? 'About this item' : 'এই পণ্য সম্পর্কে'}</h3>
                 <ul className="space-y-1.5 text-sm text-foreground/90 leading-relaxed">
                   {desc.split(/[.।]\s*/).filter(Boolean).map((sentence, i) => (
                     <li key={i} className="flex items-start gap-2">
@@ -342,8 +344,8 @@ const ProductDetail = () => {
             {/* Highlights */}
             <div className="space-y-1.5">
               {[
-                lang === 'en' ? 'Custom branding & logo engraving available' : 'কাস্টম ব্র্যান্ডিং ও লোগো খোদাই উপলব্ধ',
-                lang === 'en' ? 'Premium quality materials & craftsmanship' : 'প্রিমিয়াম মানের উপকরণ ও কারুশিল্প',
+                lang === 'zh' ? '支持定制品牌与 logo 雕刻' : lang === 'en' ? 'Custom branding & logo engraving available' : 'কাস্টম ব্র্যান্ডিং ও লোগো খোদাই উপলব্ধ',
+                lang === 'zh' ? '优质材料与精湛工艺' : lang === 'en' ? 'Premium quality materials & craftsmanship' : 'প্রিমিয়াম মানের উপকরণ ও কারুশিল্প',
               ].map((h, i) => (
                 <div key={i} className="flex items-start gap-2 text-sm text-foreground/80">
                   <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[hsl(var(--sm-gold))] shrink-0" />
@@ -359,7 +361,7 @@ const ProductDetail = () => {
 
               {/* Quantity */}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{lang === 'en' ? 'Quantity' : 'পরিমাণ'}:</span>
+                <span className="text-sm text-muted-foreground">{lang === 'zh' ? '数量' : lang === 'en' ? 'Quantity' : 'পরিমাণ'}:</span>
                 <div className="flex items-center border border-border rounded-lg overflow-hidden">
                   <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     className="px-2.5 py-1.5 hover:bg-muted transition-colors border-r border-border">
@@ -375,11 +377,10 @@ const ProductDetail = () => {
                 </div>
               </div>
 
-              {/* Total Calculator */}
               {true && (
                 <div className="flex items-center justify-between bg-muted/50 rounded-lg px-4 py-2.5">
                   <span className="text-sm text-muted-foreground">
-                    {lang === 'en' ? 'Total' : 'মোট'}:
+                    {lang === 'zh' ? '总计' : lang === 'en' ? 'Total' : 'মোট'}:
                   </span>
                   <span className="text-lg font-bold text-foreground">
                     ৳{totalPrice.toLocaleString()}
@@ -393,33 +394,32 @@ const ProductDetail = () => {
               <Button onClick={handleAddToQuote}
                 className="w-full bg-[hsl(var(--sm-gold))] hover:bg-[hsl(var(--sm-gold))]/90 text-white gap-2 rounded-full h-10">
                 <ShoppingBag className="h-4 w-4" />
-                {lang === 'en' ? 'Add to Quote Basket' : 'কোটেশন বাস্কেটে যোগ করুন'}
+                {lang === 'zh' ? '加入询价篮' : lang === 'en' ? 'Add to Quote Basket' : 'কোটেশন বাস্কেটে যোগ করুন'}
               </Button>
               <Button onClick={handleWhatsApp}
                 className="w-full bg-[hsl(142,70%,40%)] hover:bg-[hsl(142,70%,35%)] text-white gap-2 rounded-full h-10">
                 <MessageCircle className="h-4 w-4" />
-                {lang === 'en' ? 'Order via WhatsApp' : 'WhatsApp এ অর্ডার করুন'}
+                {lang === 'zh' ? '通过 WhatsApp 咨询' : lang === 'en' ? 'Order via WhatsApp' : 'WhatsApp এ অর্ডার করুন'}
               </Button>
 
               <button onClick={handleShare} className="flex items-center gap-1.5 text-xs text-accent hover:underline">
                 <Share2 className="h-3.5 w-3.5" />
-                {lang === 'en' ? 'Share' : 'শেয়ার'}
+                {lang === 'zh' ? '分享' : lang === 'en' ? 'Share' : 'শেয়ার'}
               </button>
             </div>
 
           </div>
         </div>
 
-        {/* Related Products */}
         {relatedProducts.length > 0 && (
           <div className="mt-16">
             <h2 className="text-xl font-bold mb-6">
-              {lang === 'en' ? 'Related Products' : 'সম্পর্কিত পণ্য'}
+              {lang === 'zh' ? '相关产品' : lang === 'en' ? 'Related Products' : 'সম্পর্কিত পণ্য'}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {relatedProducts.map((rp: any) => {
                 const rpCat = rp.categories;
-                const rpTitle = lang === 'en' ? rp.name_en : (rp.name_bn || rp.name_en);
+                const rpTitle = pickLocalized(rp as any, 'name', lang);
                 const rpPrice = Number(rp.unit_price) || 0;
                 return (
                   <Link key={rp.id} to={`/product/${productSlug(rp)}`}
@@ -440,7 +440,7 @@ const ProductDetail = () => {
                       )}
                       {rpCat && (
                         <span className="text-[10px] text-muted-foreground">
-                          {lang === 'en' ? rpCat.name_en : (rpCat.name_bn || rpCat.name_en)}
+                          {pickLocalized(rpCat, 'name', lang)}
                         </span>
                       )}
                     </div>

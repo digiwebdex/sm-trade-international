@@ -190,24 +190,31 @@ const HeroSection = () => {
   const products = featuredProducts ?? [];
 
   const slides = (heroSlides && heroSlides.length > 0)
-    ? heroSlides.map(s => ({
-        id: s.id,
-        title: s.title,
-        subtitle: s.subtitle,
-        image: s.image_url,
-        ctaText: s.cta_text,
-        ctaLink: s.cta_link,
-      }))
+    ? heroSlides.map(s => {
+        const translated = (s.translations && typeof s.translations === 'object' ? (s.translations as any)[lang] : null) || {};
+        return {
+          id: s.id,
+          title: translated.title || s.title,
+          subtitle: translated.subtitle || s.subtitle,
+          image: s.image_url,
+          ctaText: translated.cta_text || s.cta_text,
+          ctaLink: s.cta_link,
+        };
+      })
     : [{
         id: 'default',
-        title: get('hero', 'title', lang === 'en'
-          ? 'Premium Customized Corporate Gifts & Promotional Products'
-          : 'কাস্টমাইজড কর্পোরেট গিফট ও প্রমোশনাল প্রোডাক্ট'),
-        subtitle: get('hero', 'subtitle', lang === 'en'
-          ? 'We customize your brand identity with quality, precision and professionalism.'
-          : 'শীর্ষস্থানীয় প্রতিষ্ঠানগুলোর বিশ্বস্ত পার্টনার — প্রিমিয়াম ব্র্যান্ডেড পণ্য ও কর্পোরেট গিফটিং সমাধান।'),
+        title: get('hero', 'title', lang === 'zh'
+          ? '优质定制企业礼品和促销产品'
+          : lang === 'en'
+            ? 'Premium Customized Corporate Gifts & Promotional Products'
+            : 'কাস্টমাইজড কর্পোরেট গিফট ও প্রমোশনাল প্রোডাক্ট'),
+        subtitle: get('hero', 'subtitle', lang === 'zh'
+          ? '我们为您的品牌提供高品质、精准且专业的定制服务。'
+          : lang === 'en'
+            ? 'We customize your brand identity with quality, precision and professionalism.'
+            : 'শীর্ষস্থানীয় প্রতিষ্ঠানগুলোর বিশ্বস্ত পার্টনার — প্রিমিয়াম ব্র্যান্ডেড পণ্য ও কর্পোরেট গিফটিং সমাধান।'),
         image: heroBg,
-        ctaText: lang === 'en' ? 'Browse Products' : 'পণ্য দেখুন',
+        ctaText: lang === 'zh' ? '查看产品' : lang === 'en' ? 'Browse Products' : 'পণ্য দেখুন',
         ctaLink: '/catalog',
       }];
 
@@ -303,7 +310,7 @@ const HeroSection = () => {
           >
             <Sparkles className="w-3.5 h-3.5 text-[hsl(var(--sm-gold))]" />
             <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[hsl(var(--sm-gold))]">
-              {lang === 'en' ? 'Since 1995 • Premium Quality' : 'প্রিমিয়াম মান • ১৯৯৫ থেকে'}
+              {lang === 'zh' ? '优质品质 • 始于 1995' : lang === 'en' ? 'Since 1995 • Premium Quality' : 'প্রিমিয়াম মান • ১৯৯৫ থেকে'}
             </span>
           </div>
 
@@ -342,7 +349,7 @@ const HeroSection = () => {
                 hover:shadow-[0_8px_32px_hsl(var(--sm-gold)/0.5)]
                 hover:scale-[1.02]"
             >
-              <span className="relative z-10">{slides[current].ctaText || (lang === 'en' ? 'Browse Products' : 'পণ্য দেখুন')}</span>
+              <span className="relative z-10">{slides[current].ctaText || (lang === 'zh' ? '查看产品' : lang === 'en' ? 'Browse Products' : 'পণ্য দেখুন')}</span>
               <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
               <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--sm-gold-dark))] to-[hsl(var(--sm-gold))] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </button>
@@ -351,7 +358,7 @@ const HeroSection = () => {
               className="px-8 py-4 rounded-none border border-[hsl(var(--sm-gold)/0.4)] text-[hsl(var(--sm-gold)/0.9)] font-semibold text-sm tracking-wider uppercase
                 hover:bg-[hsl(var(--sm-gold)/0.1)] hover:border-[hsl(var(--sm-gold)/0.7)] transition-all duration-500 backdrop-blur-sm"
             >
-              {lang === 'en' ? 'Get a Quote' : 'কোটেশন নিন'}
+              {lang === 'zh' ? '获取报价' : lang === 'en' ? 'Get a Quote' : 'কোটেশন নিন'}
             </button>
           </div>
         </div>
