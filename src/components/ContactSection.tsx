@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Phone, Mail, MapPin, MessageCircle, Send } from 'lucide-react';
 
 const ContactSection = () => {
-  const { t, lang } = useLanguage();
+  const { t, lang, tt } = useLanguage();
   const { get } = useSiteSettings();
   const { toast } = useToast();
 
@@ -27,7 +27,7 @@ const ContactSection = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
-      toast({ title: lang === 'en' ? 'Please fill required fields' : 'প্রয়োজনীয় ক্ষেত্র পূরণ করুন', variant: 'destructive' });
+      toast({ title: tt('Please fill required fields', 'প্রয়োজনীয় ক্ষেত্র পূরণ করুন', '请填写必填字段'), variant: 'destructive' });
       return;
     }
     setSubmitting(true);
@@ -39,11 +39,11 @@ const ContactSection = () => {
         message: form.message.trim(),
       });
       if (error) throw error;
-      toast({ title: lang === 'en' ? 'Message sent successfully!' : 'বার্তা সফলভাবে পাঠানো হয়েছে!' });
+      toast({ title: tt('Message sent successfully!', 'বার্তা সফলভাবে পাঠানো হয়েছে!', '消息发送成功！') });
       setForm({ name: '', email: '', phone: '', message: '' });
     } catch (err) {
       console.error(err);
-      toast({ title: lang === 'en' ? 'Failed to send message' : 'বার্তা পাঠাতে ব্যর্থ', variant: 'destructive' });
+      toast({ title: tt('Failed to send message', 'বার্তা পাঠাতে ব্যর্থ', '消息发送失败'), variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -53,8 +53,8 @@ const ContactSection = () => {
 
   const contactItems = [
     { icon: MapPin, label: t('contact.address'), value: address },
-    { icon: Phone, label: lang === 'en' ? 'Phone' : 'ফোন', value: phone },
-    { icon: Mail, label: lang === 'en' ? 'Email' : 'ইমেইল', value: email },
+    { icon: Phone, label: tt('Phone', 'ফোন', '电话'), value: phone },
+    { icon: Mail, label: tt('Email', 'ইমেইল', '邮箱'), value: email },
   ];
 
   return (
@@ -63,7 +63,7 @@ const ContactSection = () => {
         {/* Header */}
         <div className="text-center mb-14">
           <span className="inline-block text-accent text-sm font-semibold tracking-widest uppercase mb-3" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-            {lang === 'en' ? 'Reach Out' : 'যোগাযোগ করুন'}
+            {tt('Reach Out', 'যোগাযোগ করুন', '联系方式')}
           </span>
           <h2 className="text-3xl md:text-5xl font-bold mb-5">{t('contact.title')}</h2>
           <div className="flex items-center justify-center gap-3">
@@ -82,7 +82,7 @@ const ContactSection = () => {
             <Textarea placeholder={t('contact.message') + ' *'} value={form.message} onChange={set('message')} rows={5} className={inputClass} required />
             <Button type="submit" disabled={submitting} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
               <Send className="h-4 w-4" />
-              {submitting ? (lang === 'en' ? 'Sending...' : 'পাঠানো হচ্ছে...') : t('contact.send')}
+              {submitting ? tt('Sending...', 'পাঠানো হচ্ছে...', '发送中...') : t('contact.send')}
             </Button>
           </form>
 
@@ -130,7 +130,7 @@ const ContactSection = () => {
               }
               return (
                 <div className="bg-muted rounded-xl h-48 flex items-center justify-center text-muted-foreground text-sm mt-4 shadow-sm">
-                  {lang === 'en' ? 'Add Google Maps URL in Admin Settings → Branding' : 'অ্যাডমিন সেটিংস → ব্র্যান্ডিং থেকে Google Maps URL যোগ করুন'}
+                  {tt('Add Google Maps URL in Admin Settings → Branding', 'অ্যাডমিন সেটিংস → ব্র্যান্ডিং থেকে Google Maps URL যোগ করুন', '在管理设置 → 品牌中添加 Google 地图 URL')}
                 </div>
               );
             })()}

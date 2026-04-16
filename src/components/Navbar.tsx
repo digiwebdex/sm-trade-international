@@ -151,7 +151,7 @@ const Navbar = () => {
 
   const allLinks = menuItems;
 
-  const categoriesLabel = lang === 'en' ? 'Categories' : 'ক্যাটাগরি';
+  const categoriesLabel = lang === 'zh' ? '类别' : lang === 'bn' ? 'ক্যাটাগরি' : 'Categories';
 
   return (
     <nav

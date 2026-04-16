@@ -73,7 +73,7 @@ type DisplayProduct = {
 };
 
 const ProductsSection = () => {
-  const { t, lang } = useLanguage();
+  const { t, lang, tt } = useLanguage();
   const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -192,9 +192,9 @@ const ProductsSection = () => {
     return result;
   }, [allProducts, filter, search, showAll]);
 
-  const searchPlaceholder = lang === 'en' ? 'Search products...' : 'পণ্য খুঁজুন...';
-  const showAllLabel = lang === 'en' ? 'Show inactive' : 'নিষ্ক্রিয় দেখান';
-  const noResults = lang === 'en' ? 'No products found.' : 'কোনো পণ্য পাওয়া যায়নি।';
+  const searchPlaceholder = tt('Search products...', 'পণ্য খুঁজুন...', '搜索产品...');
+  const showAllLabel = tt('Show inactive', 'নিষ্ক্রিয় দেখান', '显示停用');
+  const noResults = tt('No products found.', 'কোনো পণ্য পাওয়া যায়নি।', '未找到产品。');
 
   return (
     <section id="products" className="py-24 bg-secondary relative overflow-hidden">
@@ -206,7 +206,7 @@ const ProductsSection = () => {
       <div className="container mx-auto px-4 relative">
         <div className="text-center mb-10">
           <span className="inline-block text-accent text-xs font-semibold tracking-widest uppercase mb-3" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-            {lang === 'en' ? 'Our Products' : 'আমাদের পণ্য'}
+            {tt('Our Products', 'আমাদের পণ্য', '我们的产品')}
           </span>
           <h2 className="text-3xl md:text-5xl font-bold mb-5">{t('products.title')}</h2>
           <div className="flex items-center justify-center gap-3">
@@ -275,7 +275,7 @@ const ProductsSection = () => {
               >
                 {!p.isActive && (
                   <span className="absolute top-3 left-3 z-10 bg-muted text-muted-foreground text-[10px] px-2 py-0.5 rounded-full">
-                    {lang === 'en' ? 'Inactive' : 'নিষ্ক্রিয়'}
+                    {tt('Inactive', 'নিষ্ক্রিয়', '停用')}
                   </span>
                 )}
                 {p.categoryLabel && (
@@ -313,7 +313,7 @@ const ProductsSection = () => {
                     <p className="text-muted-foreground text-xs line-clamp-2 leading-relaxed">{p.desc}</p>
                   )}
                   <span className="mt-auto pt-1.5 text-[11px] font-semibold text-[hsl(var(--sm-gold))] group-hover:underline">
-                    {lang === 'en' ? 'Request Quote →' : 'কোটেশন চান →'}
+                    {tt('Request Quote →', 'কোটেশন চান →', '请求报价 →')}
                   </span>
                 </div>
               </div>
@@ -352,7 +352,7 @@ const ProductsSection = () => {
                 onClick={() => setLightbox(null)}
                 className="inline-block mt-3 px-6 py-2.5 rounded-full bg-[hsl(var(--sm-gold))] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
               >
-                {lang === 'en' ? 'Request Quote' : 'কোটেশন অনুরোধ'}
+                {tt('Request Quote', 'কোটেশন অনুরোধ', '请求报价')}
               </a>
             </div>
           </div>

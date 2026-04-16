@@ -11,7 +11,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/svg+xml', 'application/pdf'];
 
 const QuoteRequestForm = () => {
-  const { t, lang } = useLanguage();
+  const { t, lang, tt } = useLanguage();
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -50,7 +50,7 @@ const QuoteRequestForm = () => {
   const generateQuote = async () => {
     if (!form.company_name && !form.product_interest && !form.message) {
       toast({
-        title: lang === 'en' ? 'Please fill in some details first' : 'প্রথমে কিছু তথ্য দিন',
+        title: tt('Please fill in some details first', 'প্রথমে কিছু তথ্য দিন', '请先填写一些详细信息'),
         variant: 'destructive',
       });
       return;
@@ -117,7 +117,7 @@ const QuoteRequestForm = () => {
     } catch (err: any) {
       console.error(err);
       toast({
-        title: lang === 'en' ? 'Quote generation failed' : 'কোটেশন তৈরি ব্যর্থ হয়েছে',
+        title: tt('Quote generation failed', 'কোটেশন তৈরি ব্যর্থ হয়েছে', '报价生成失败'),
         description: err.message,
         variant: 'destructive',
       });
@@ -186,7 +186,7 @@ const QuoteRequestForm = () => {
         {/* Header */}
         <div className="text-center mb-14">
           <span className="inline-block text-accent text-sm font-semibold tracking-widest uppercase mb-3" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-            {lang === 'en' ? 'Get Started' : 'শুরু করুন'}
+            {tt('Get Started', 'শুরু করুন', '开始')}
           </span>
           <div className="flex items-center justify-center gap-3 mb-4">
             <Building2 className="h-7 w-7 text-primary" />
@@ -249,8 +249,8 @@ const QuoteRequestForm = () => {
               >
                 <Sparkles className={`h-4 w-4 ${generating ? 'animate-spin' : ''}`} />
                 {generating
-                  ? (lang === 'en' ? 'Generating...' : 'তৈরি হচ্ছে...')
-                  : (lang === 'en' ? 'AI Quote Estimate' : 'AI কোটেশন')}
+                  ? tt('Generating...', 'তৈরি হচ্ছে...', '生成中...')
+                  : tt('AI Quote Estimate', 'AI কোটেশন', 'AI 报价估算')}
               </Button>
             </div>
           </form>
@@ -262,7 +262,7 @@ const QuoteRequestForm = () => {
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-accent" />
                   <span className="text-primary-foreground text-sm font-semibold" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                    {lang === 'en' ? 'AI Quote Preview' : 'AI কোটেশন প্রিভিউ'}
+                    {tt('AI Quote Preview', 'AI কোটেশন প্রিভিউ', 'AI 报价预览')}
                   </span>
                 </div>
                 {generatedQuote && (
@@ -280,9 +280,11 @@ const QuoteRequestForm = () => {
                   <div className="flex flex-col items-center justify-center h-[260px] text-center text-muted-foreground">
                     <Sparkles className="h-10 w-10 mb-3 text-accent/30" />
                     <p className="text-sm">
-                      {lang === 'en'
-                        ? 'Fill in your requirements and click "AI Quote Estimate" to generate a professional quote instantly.'
-                        : 'আপনার প্রয়োজনীয়তা পূরণ করুন এবং তাত্ক্ষণিক পেশাদার কোটেশন পেতে "AI কোটেশন" ক্লিক করুন।'}
+                      {tt(
+                        'Fill in your requirements and click "AI Quote Estimate" to generate a professional quote instantly.',
+                        'আপনার প্রয়োজনীয়তা পূরণ করুন এবং তাত্ক্ষণিক পেশাদার কোটেশন পেতে "AI কোটেশন" ক্লিক করুন।',
+                        '填写您的要求，然后单击"AI 报价估算"立即生成专业报价。'
+                      )}
                     </p>
                   </div>
                 )}
