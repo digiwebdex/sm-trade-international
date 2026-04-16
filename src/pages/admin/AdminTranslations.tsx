@@ -122,7 +122,7 @@ const AdminTranslations = () => {
               )}
               {serviceStatus === 'ok' && (
                 <>
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
                   <div>
                     <p className="text-sm font-medium">LibreTranslate is running</p>
                     <p className="text-xs text-muted-foreground">
@@ -173,7 +173,7 @@ const AdminTranslations = () => {
                 {r && (
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="secondary">Total: {r.total}</Badge>
-                    <Badge className="bg-green-600">Updated: {r.updated}</Badge>
+                    <Badge className="bg-primary text-primary-foreground">Updated: {r.updated}</Badge>
                     {typeof r.skipped === 'number' && (
                       <Badge variant="outline">Skipped: {r.skipped}</Badge>
                     )}
