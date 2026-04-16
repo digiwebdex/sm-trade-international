@@ -13,7 +13,7 @@ import { ShoppingBag, Trash2, Plus, Minus, MessageCircle, Send, X, ArrowLeft, Lo
 
 const QuoteBasketDrawer = () => {
   const { items, removeItem, updateQuantity, clearBasket, totalItems, isOpen, setIsOpen } = useQuoteBasket();
-  const { lang } = useLanguage();
+  const { lang, tt } = useLanguage();
   const { get } = useSiteSettings();
   const { toast } = useToast();
   const whatsappNumber = (get('contact', 'whatsapp_number', '8801867666888') as string).replace(/[^0-9]/g, '') || '8801867666888';
@@ -22,7 +22,12 @@ const QuoteBasketDrawer = () => {
   const [sending, setSending] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
 
-  const title = (item: typeof items[0]) => lang === 'en' ? item.titleEn : item.titleBn;
+  const title = (item: typeof items[0]) => {
+    const anyItem = item as any;
+    if (lang === 'zh' && anyItem.titleZh) return anyItem.titleZh;
+    if (lang === 'bn' && item.titleBn) return item.titleBn;
+    return item.titleEn;
+  };
 
   const getWhatsAppUrl = () => {
     const itemsList = items.map((item, i) =>
@@ -146,7 +151,7 @@ const QuoteBasketDrawer = () => {
                   {/* Summary of items */}
                   <div className="bg-muted/50 rounded-lg p-3 text-sm">
                     <p className="font-semibold mb-2">
-                      {lang === 'en' ? `${items.length} products selected` : `${items.length}টি পণ্য নির্বাচিত`}
+                      {tt(`${items.length} products selected`, `${items.length}টি পণ্য নির্বাচিত`, `已选择 ${items.length} 件商品`)}
                     </p>
                     {items.map(item => (
                       <div key={item.id} className="flex justify-between text-muted-foreground text-xs py-0.5">
@@ -157,26 +162,26 @@ const QuoteBasketDrawer = () => {
                   </div>
 
                   <Input
-                    placeholder={(lang === 'en' ? 'Your Name' : 'আপনার নাম') + ' *'}
+                    placeholder={tt('Your Name', 'আপনার নাম', '您的姓名') + ' *'}
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                     required
                   />
                   <Input
                     type="email"
-                    placeholder={(lang === 'en' ? 'Email Address' : 'ইমেইল') + ' *'}
+                    placeholder={tt('Email Address', 'ইমেইল', '电子邮箱') + ' *'}
                     value={form.email}
                     onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                     required
                   />
                   <Input
                     type="tel"
-                    placeholder={lang === 'en' ? 'Phone Number' : 'ফোন নম্বর'}
+                    placeholder={tt('Phone Number', 'ফোন নম্বর', '电话号码')}
                     value={form.phone}
                     onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                   />
                   <Textarea
-                    placeholder={lang === 'en' ? 'Additional message (optional)' : 'অতিরিক্ত বার্তা (ঐচ্ছিক)'}
+                    placeholder={tt('Additional message (optional)', 'অতিরিক্ত বার্তা (ঐচ্ছিক)', '附加消息（可选）')}
                     value={form.message}
                     onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
                     rows={3}
@@ -194,12 +199,12 @@ const QuoteBasketDrawer = () => {
                   {sending ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      {lang === 'en' ? 'Sending...' : 'পাঠানো হচ্ছে...'}
+                      {tt('Sending...', 'পাঠানো হচ্ছে...', '发送中...')}
                     </>
                   ) : (
                     <>
                       <Send className="h-4 w-4" />
-                      {lang === 'en' ? 'Send Quote Request' : 'কোটেশন অনুরোধ পাঠান'}
+                      {tt('Send Quote Request', 'কোটেশন অনুরোধ পাঠান', '发送报价请求')}
                     </>
                   )}
                 </Button>
