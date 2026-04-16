@@ -1,8 +1,14 @@
 const express = require('express');
 const pool = require('../db');
 const { authMiddleware, optionalAuth } = require('../middleware/auth');
+const { autoFillTranslations, autoFillSettingsValue } = require('../services/translator');
 
 const router = express.Router();
+
+// Tables where we should auto-translate _en → _bn/_zh on save
+const AUTO_TRANSLATE_TABLES = new Set([
+  'categories', 'products', 'product_variants', 'gallery', 'about_page', 'seo_meta',
+]);
 
 // ── Helper: generic CRUD factory ────────────────────────────
 function createCrudRoutes(tableName, options = {}) {
@@ -36,8 +42,12 @@ function createCrudRoutes(tableName, options = {}) {
   // POST — create (auth required)
   r.post('/', authMiddleware, async (req, res) => {
     try {
-      const keys = Object.keys(req.body);
-      const values = Object.values(req.body);
+      let body = req.body || {};
+      if (AUTO_TRANSLATE_TABLES.has(tableName)) {
+        body = await autoFillTranslations(body, { onlyIfEmpty: true });
+      }
+      const keys = Object.keys(body);
+      const values = Object.values(body);
       const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
       const { rows } = await pool.query(
         `INSERT INTO ${tableName} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING *`,
@@ -53,8 +63,12 @@ function createCrudRoutes(tableName, options = {}) {
   // PATCH — update (auth required)
   r.patch('/:id', authMiddleware, async (req, res) => {
     try {
-      const keys = Object.keys(req.body);
-      const values = Object.values(req.body);
+      let body = req.body || {};
+      if (AUTO_TRANSLATE_TABLES.has(tableName)) {
+        body = await autoFillTranslations(body, { onlyIfEmpty: true });
+      }
+      const keys = Object.keys(body);
+      const values = Object.values(body);
       const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
       const { rows } = await pool.query(
         `UPDATE ${tableName} SET ${setClause} WHERE id = $${keys.length + 1} RETURNING *`,
@@ -128,13 +142,15 @@ router.get('/site-settings', async (_req, res) => {
 router.post('/site-settings', authMiddleware, async (req, res) => {
   try {
     const { setting_key, setting_value } = req.body;
+    // Auto-fill missing bn/zh translations in JSONB structure
+    const filled = await autoFillSettingsValue(setting_value || {}, { onlyIfEmpty: true });
     const { rows } = await pool.query(
       `INSERT INTO site_settings (setting_key, setting_value)
        VALUES ($1, $2)
        ON CONFLICT (setting_key)
        DO UPDATE SET setting_value = $2, updated_at = now()
        RETURNING *`,
-      [setting_key, JSON.stringify(setting_value)]
+      [setting_key, JSON.stringify(filled)]
     );
     res.json(rows[0]);
   } catch (err) {
