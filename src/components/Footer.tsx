@@ -19,7 +19,7 @@ const socialIconMap: Record<string, typeof Facebook> = {
 const DEFAULT_FOOTER_VIDEO_URL = '/__l5e/assets-v1/f394b421-1982-4efa-9fc4-1c959be7d338/footer-corporate-gifts.mp4';
 
 const Footer = () => {
-  const { t, lang } = useLanguage();
+  const { t, lang, tt } = useLanguage();
   const { get } = useSiteSettings();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -33,18 +33,11 @@ const Footer = () => {
   const email = get('contact', 'email', 'info@smtradeint.com');
   const address = get('contact', 'address', t('contact.addressValue'));
 
-  const desc = lang === 'bn'
-    ? get('footer', 'description_bn', get('footer', 'description', t('footer.desc')))
-    : get('footer', 'description_en', get('footer', 'description', t('footer.desc')));
-  const copyright = lang === 'bn'
-    ? get('footer', 'copyright_bn', get('footer', 'copyright', t('footer.rights')))
-    : get('footer', 'copyright_en', get('footer', 'copyright', t('footer.rights')));
-  const quicklinksTitle = lang === 'bn'
-    ? get('footer', 'quicklinks_title_bn', t('footer.quicklinks'))
-    : get('footer', 'quicklinks_title_en', t('footer.quicklinks'));
-  const contactTitle = lang === 'bn'
-    ? get('footer', 'contactinfo_title_bn', t('footer.contactinfo'))
-    : get('footer', 'contactinfo_title_en', t('footer.contactinfo'));
+  const langSuffix = lang === 'zh' ? 'zh' : lang === 'bn' ? 'bn' : 'en';
+  const desc = get('footer', `description_${langSuffix}`, get('footer', 'description', t('footer.desc')));
+  const copyright = get('footer', `copyright_${langSuffix}`, get('footer', 'copyright', t('footer.rights')));
+  const quicklinksTitle = get('footer', `quicklinks_title_${langSuffix}`, t('footer.quicklinks'));
+  const contactTitle = get('footer', `contactinfo_title_${langSuffix}`, t('footer.contactinfo'));
 
   const footerVideoUrl = get('footer', 'video_url', DEFAULT_FOOTER_VIDEO_URL) || DEFAULT_FOOTER_VIDEO_URL;
   const footerBgImage = get('footer', 'bg_image', '/images/footer-bg.jpg');
@@ -66,12 +59,12 @@ const Footer = () => {
   }> | undefined;
 
   const quickLinks = dynamicLinks || [
-    { label_en: 'Home', label_bn: 'হোম', href: '/#home', isRoute: false },
-    { label_en: 'About', label_bn: 'সম্পর্কে', href: '/about', isRoute: true },
-    { label_en: 'Services', label_bn: 'সেবা', href: '/#services', isRoute: false },
-    { label_en: 'Products', label_bn: 'পণ্য', href: '/#products', isRoute: false },
-    { label_en: 'Contact', label_bn: 'যোগাযোগ', href: '/#contact', isRoute: false },
-  ];
+    { label_en: 'Home', label_bn: 'হোম', label_zh: '首页', href: '/#home', isRoute: false },
+    { label_en: 'About', label_bn: 'সম্পর্কে', label_zh: '关于', href: '/about', isRoute: true },
+    { label_en: 'Services', label_bn: 'সেবা', label_zh: '服务', href: '/#services', isRoute: false },
+    { label_en: 'Products', label_bn: 'পণ্য', label_zh: '产品', href: '/#products', isRoute: false },
+    { label_en: 'Contact', label_bn: 'যোগাযোগ', label_zh: '联系', href: '/#contact', isRoute: false },
+  ] as Array<{ label_en: string; label_bn: string; label_zh?: string; href: string; isRoute: boolean }>;
 
   const contactSettings = allSettings?.contact as any;
   const socialPlatforms = ['facebook', 'linkedin', 'instagram', 'twitter', 'youtube'];
@@ -197,7 +190,11 @@ const Footer = () => {
             </h4>
             <div className="space-y-3 mt-2">
               {quickLinks.map((item, idx) => {
-                const label = lang === 'bn' && item.label_bn ? item.label_bn : item.label_en;
+                const label = lang === 'zh' && (item as any).label_zh
+                  ? (item as any).label_zh
+                  : lang === 'bn' && item.label_bn
+                    ? item.label_bn
+                    : item.label_en;
                 const cls = "flex items-center gap-2 text-primary-foreground/60 hover:text-[hsl(var(--sm-gold))] text-sm transition-all duration-300 group";
                 const dot = <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--sm-gold))]/50 group-hover:bg-[hsl(var(--sm-gold))] transition-colors" />;
                 return item.isRoute ? (
@@ -226,7 +223,7 @@ const Footer = () => {
               {/* Savar Office */}
               <div>
                 <span className="text-[hsl(var(--sm-gold))] font-semibold text-xs uppercase tracking-wider block mb-1">
-                  {lang === 'bn' ? 'সাভার অফিস' : 'SAVAR OFFICE'}
+                  {tt('SAVAR OFFICE', 'সাভার অফিস', '萨瓦尔办公室')}
                 </span>
                 <div className="flex items-start gap-3">
                   <div className="w-9 h-9 rounded-full bg-[hsl(var(--sm-gold))]/15 border border-[hsl(var(--sm-gold))]/25 flex items-center justify-center shrink-0 mt-0.5">
@@ -240,7 +237,7 @@ const Footer = () => {
               {/* Banani Office */}
               <div>
                 <span className="text-[hsl(var(--sm-gold))] font-semibold text-xs uppercase tracking-wider block mb-1">
-                  {lang === 'bn' ? 'বনানী অফিস' : 'BANANI OFFICE'}
+                  {tt('BANANI OFFICE', 'বনানী অফিস', '巴纳尼办公室')}
                 </span>
                 <div className="flex items-start gap-3">
                   <div className="w-9 h-9 rounded-full bg-[hsl(var(--sm-gold))]/15 border border-[hsl(var(--sm-gold))]/25 flex items-center justify-center shrink-0 mt-0.5">
@@ -275,7 +272,7 @@ const Footer = () => {
           >
             <h4 className="font-bold mb-4 text-lg" style={{ fontFamily: 'DM Sans, sans-serif' }}>
               <span className="text-[hsl(var(--sm-gold))]/50 mr-2">—</span>
-              {lang === 'bn' ? 'ফোন নম্বর' : 'Phone Numbers'}
+              {tt('Phone Numbers', 'ফোন নম্বর', '电话号码')}
             </h4>
             <div className="space-y-2.5 text-sm text-primary-foreground/60 mt-2">
               {[
